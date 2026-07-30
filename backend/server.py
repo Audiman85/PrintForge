@@ -6,7 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import os, uuid, logging, requests, mimetypes, stripe
 
@@ -766,6 +766,7 @@ async def upload_design(
         "design_id": design_id,
         "user_id": user["user_id"],
         "author_name": user.get("name") or user.get("email"),
+        "author_email": (user.get("email") or "").lower(),
         "author_picture": user.get("picture"),
         "title": title,
         "description": description,
@@ -1178,19 +1179,43 @@ async def _mark_donation_paid(session_id: str) -> Optional[dict]:
     )
     if not result:
         return tx
-    await db.supporters.update_one(
-        {"session_id": session_id},
-        {"$setOnInsert": {
-            "id": str(uuid.uuid4()),
-            "session_id": session_id,
-            "name": "" if result.get("is_anonymous") else (result.get("supporter_name") or ""),
-            "message": result.get("supporter_message") or "",
-            "is_anonymous": bool(result.get("is_anonymous")),
-            "amount_cents": result.get("amount_cents", 0),
-            "created_at": datetime.now(timezone.utc),
-        }},
-        upsert=True,
-    )
+    # Fetch customer email from Stripe (best-effort)
+    customer_email = ""
+    try:
+        s = stripe.checkout.Session.retrieve(session_id)
+        customer_email = (
+            (s.get("customer_details") or {}).get("email")
+            or s.get("customer_email")
+            or ""
+        )
+    except Exception:
+        pass
+    if result.get("purpose") == "donation":
+        await db.supporters.update_one(
+            {"session_id": session_id},
+            {"$setOnInsert": {
+                "id": str(uuid.uuid4()),
+                "session_id": session_id,
+                "name": "" if result.get("is_anonymous") else (result.get("supporter_name") or ""),
+                "message": result.get("supporter_message") or "",
+                "is_anonymous": bool(result.get("is_anonymous")),
+                "amount_cents": result.get("amount_cents", 0),
+                "email": (customer_email or "").lower(),
+                "created_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    elif result.get("purpose") == "print_order":
+        # Promote the pending print_order into orders collection (idempotent)
+        order_id = result.get("order_id")
+        existing = await db.print_orders.find_one({"order_id": order_id})
+        if existing:
+            await db.print_orders.update_one(
+                {"order_id": order_id},
+                {"$set": {"status": "paid",
+                          "paid_at": datetime.now(timezone.utc).isoformat(),
+                          "customer_email": (customer_email or existing.get("customer_email") or "").lower()}},
+            )
     return result
 
 
@@ -1268,6 +1293,346 @@ async def list_supporters(limit: int = Query(50, ge=1, le=200)):
         total_count = int(a.get("count") or 0)
         total_cents = int(a.get("total") or 0)
     return {"supporters": items, "count": total_count, "total_cents": total_cents}
+
+
+# ------------------------- Supporter Badge -------------------------
+@api_router.get("/supporters/emails")
+async def supporter_emails():
+    """Return the (lower-cased) set of supporter emails for badge display on community uploads."""
+    emails = set()
+    async for s in db.supporters.find({"email": {"$exists": True, "$ne": ""}}, {"_id": 0, "email": 1}):
+        e = (s.get("email") or "").lower().strip()
+        if e:
+            emails.add(e)
+    return {"emails": sorted(emails)}
+
+
+# ------------------------- Restock Alerts -------------------------
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+
+class RestockSubscribeRequest(BaseModel):
+    email: str
+    material: str
+    colors: List[str] = []
+
+@api_router.post("/restock/subscribe")
+async def restock_subscribe(req: RestockSubscribeRequest):
+    email = (req.email or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(400, "Valid email required")
+    material = (req.material or "").strip()
+    if not material:
+        raise HTTPException(400, "Material required")
+    colors = [c.strip() for c in (req.colors or []) if c and c.strip()]
+    now = datetime.now(timezone.utc)
+    sub_id = str(uuid.uuid4())
+    doc = {
+        "id": sub_id,
+        "email": email,
+        "material": material,
+        "colors": colors,
+        "status": "active",
+        "created_at": now,
+        "last_notified_at": None,
+    }
+    # Idempotent upsert on (email, material)
+    await db.restock_subscriptions.update_one(
+        {"email": email, "material": material},
+        {"$set": {"colors": colors, "status": "active", "updated_at": now},
+         "$setOnInsert": {"id": sub_id, "email": email, "material": material, "created_at": now, "last_notified_at": None}},
+        upsert=True,
+    )
+    return {"ok": True, "id": sub_id, "email": email, "material": material, "colors": colors}
+
+
+@api_router.get("/restock/subscriptions")
+async def restock_subscriptions(user=Depends(get_current_user)):
+    subs = await db.restock_subscriptions.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    for s in subs:
+        for k in ("created_at", "updated_at", "last_notified_at"):
+            v = s.get(k)
+            if isinstance(v, datetime):
+                s[k] = v.isoformat()
+    return {"subscriptions": subs, "count": len(subs), "email_provider_configured": bool(RESEND_API_KEY)}
+
+
+class RestockNotifyRequest(BaseModel):
+    material: str
+    colors: List[str] = []
+    note: Optional[str] = None
+
+@api_router.post("/restock/notify")
+async def restock_notify(req: RestockNotifyRequest, user=Depends(get_current_user)):
+    material = (req.material or "").strip()
+    if not material:
+        raise HTTPException(400, "Material required")
+    color_set = {c.strip().lower() for c in (req.colors or []) if c and c.strip()}
+    query = {"material": material, "status": "active"}
+    subs = await db.restock_subscriptions.find(query, {"_id": 0}).to_list(1000)
+    # Filter: send to a subscriber if they asked for one of the restocked colours (or if they asked "any").
+    matching = []
+    for s in subs:
+        wanted = {c.lower() for c in (s.get("colors") or [])}
+        if not wanted or (color_set and wanted & color_set):
+            matching.append(s)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    sent = 0
+    queued = 0
+    for s in matching:
+        outcome = "queued"
+        if RESEND_API_KEY:
+            try:
+                requests.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+                    json={
+                        "from": os.environ.get("RESTOCK_FROM_EMAIL", "PrintForge <hello@printforge.dev>"),
+                        "to": [s["email"]],
+                        "subject": f"Back in stock — {material}" + (f" ({', '.join(req.colors)})" if req.colors else ""),
+                        "html": f"<p>Great news — the {material} filament you were waiting on is back in stock.</p>"
+                                 f"<p>Colours available now: <b>{', '.join(req.colors) or 'all colours'}</b>.</p>"
+                                 + (f"<p>{req.note}</p>" if req.note else "")
+                                 + "<p><a href='https://design-forge-520.preview.emergentagent.com/'>Order yours →</a></p>",
+                    },
+                    timeout=8,
+                )
+                outcome = "sent"
+                sent += 1
+            except Exception:
+                outcome = "queued"
+                queued += 1
+        else:
+            queued += 1
+        await db.restock_notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "subscription_id": s.get("id"),
+            "email": s["email"],
+            "material": material,
+            "colors": list(color_set),
+            "outcome": outcome,
+            "note": req.note,
+            "sent_at": now_iso,
+        })
+        await db.restock_subscriptions.update_one(
+            {"email": s["email"], "material": material},
+            {"$set": {"last_notified_at": now_iso}},
+        )
+    return {
+        "matched": len(matching),
+        "sent": sent,
+        "queued": queued,
+        "email_provider_configured": bool(RESEND_API_KEY),
+    }
+
+
+# ------------------------- Bulk CSV product import -------------------------
+@api_router.post("/products/bulk")
+async def bulk_import_products(
+    file: UploadFile = File(...),
+    user=Depends(get_current_user),
+):
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(400, "CSV file required")
+    raw = await file.read()
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(400, "CSV too large (max 5MB)")
+    import csv as _csv, io as _io
+    text = raw.decode("utf-8-sig", errors="ignore")
+    reader = _csv.DictReader(_io.StringIO(text))
+    required = {"title", "description", "category", "price", "print_time_hours", "print_weight_grams"}
+    missing = required - {(h or "").strip() for h in (reader.fieldnames or [])}
+    if missing:
+        raise HTTPException(400, f"Missing required columns: {', '.join(sorted(missing))}")
+    inserted, skipped, errors = [], [], []
+    for i, row in enumerate(reader, start=2):
+        try:
+            category = (row.get("category") or "").strip().lower()
+            if category not in CATEGORY_CODES:
+                errors.append({"row": i, "error": f"Category '{category}' not in {sorted(CATEGORY_CODES)}"})
+                continue
+            title = (row.get("title") or "").strip()
+            if not title:
+                errors.append({"row": i, "error": "Empty title"})
+                continue
+            def _f(k, dflt):
+                v = (row.get(k) or "").strip()
+                return float(v) if v else dflt
+            def _i(k, dflt):
+                v = (row.get(k) or "").strip()
+                return int(float(v)) if v else dflt
+            tags_raw = (row.get("tags") or "").strip()
+            tags = [t.strip() for t in tags_raw.split("|")] if tags_raw else []
+            doc = {
+                "product_id": f"prod_{uuid.uuid4().hex[:10]}",
+                "title": title,
+                "description": (row.get("description") or "").strip(),
+                "category": category,
+                "price": _f("price", 0.0),
+                "print_time_hours": _f("print_time_hours", 0.0),
+                "print_weight_grams": _i("print_weight_grams", 0),
+                "preview_shape": (row.get("preview_shape") or "box").strip(),
+                "recommended_colors": _i("recommended_colors", 1),
+                "material": (row.get("material") or "PLA").strip(),
+                "image_url": (row.get("image_url") or "").strip(),
+                "tags": tags,
+                "created_by": user["user_id"],
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "imported_from_csv": True,
+            }
+            await db.products.insert_one(doc)
+            inserted.append(doc["product_id"])
+        except Exception as e:
+            errors.append({"row": i, "error": str(e)})
+    return {
+        "inserted": len(inserted),
+        "skipped": len(skipped),
+        "errors": errors,
+        "product_ids": inserted,
+    }
+
+
+@api_router.get("/products/bulk/template")
+async def bulk_template():
+    tmpl = (
+        "title,description,category,price,print_time_hours,print_weight_grams,preview_shape,recommended_colors,material,image_url,tags\n"
+        "Voronoi Vase,\"Organic vase for dry flowers\",decor,32.00,7.5,120,sphere,1,PLA,https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800,vase|voronoi|decor\n"
+        "Cable Comb,\"Snap-on cable manager (x10)\",useful,9.50,1.8,20,cylinder,1,PETG,,cable|utility\n"
+    )
+    return FastAPIResponse(
+        content=tmpl,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="products_template.csv"'}
+    )
+
+
+# ------------------------- Stripe Order Checkout (print orders) -------------------------
+class OrderCheckoutRequest(BaseModel):
+    product_id: str
+    quote_total_cents: int
+    shipping_price_cents: int
+    shipping_carrier_code: Optional[str] = None
+    shipping_country: Optional[str] = None
+    shipping_postal: Optional[str] = None
+    config: Dict[str, Any] = {}
+    origin_url: str
+    contact_email: Optional[str] = None
+    contact_name: Optional[str] = None
+
+@api_router.post("/orders/checkout")
+async def orders_checkout(req: OrderCheckoutRequest):
+    if req.quote_total_cents <= 0:
+        raise HTTPException(400, "Invalid quote total")
+    if req.shipping_price_cents < 0:
+        raise HTTPException(400, "Invalid shipping price")
+    total_cents = int(req.quote_total_cents) + int(req.shipping_price_cents)
+    product = await db.products.find_one({"product_id": req.product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(404, "Product not found")
+
+    order_id = f"ord_{uuid.uuid4().hex[:10]}"
+    metadata = {
+        "purpose": "print_order",
+        "order_id": order_id,
+        "product_id": req.product_id,
+        "product_title": (product.get("title") or "")[:80],
+        "carrier": (req.shipping_carrier_code or "")[:24],
+        "quote_cents": str(req.quote_total_cents),
+        "shipping_cents": str(req.shipping_price_cents),
+    }
+    line_items = [
+        {
+            "price_data": {
+                "currency": "usd",
+                "unit_amount": int(req.quote_total_cents),
+                "product_data": {
+                    "name": product.get("title") or "3D Print Order",
+                    "description": f"{product.get('title')} · {req.config.get('material','PLA')} · {req.config.get('quantity',1)}× · Quality {req.config.get('quality','regular')}",
+                },
+            },
+            "quantity": 1,
+        },
+    ]
+    if req.shipping_price_cents > 0:
+        line_items.append({
+            "price_data": {
+                "currency": "usd",
+                "unit_amount": int(req.shipping_price_cents),
+                "product_data": {
+                    "name": f"Shipping — {req.shipping_carrier_code or 'Standard'}",
+                    "description": f"To {req.shipping_country or '—'} {req.shipping_postal or ''}",
+                },
+            },
+            "quantity": 1,
+        })
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            line_items=line_items,
+            success_url=f"{req.origin_url}/order/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{req.origin_url}/product/{req.product_id}?checkout=cancelled",
+            metadata=metadata,
+            payment_intent_data={"metadata": metadata},
+        )
+    except stripe.error.StripeError as e:
+        logger.exception("Order checkout create failed")
+        raise HTTPException(500, f"Stripe error: {e.user_message or str(e)}")
+
+    await db.payment_transactions.insert_one({
+        "session_id": session.id,
+        "purpose": "print_order",
+        "order_id": order_id,
+        "product_id": req.product_id,
+        "amount_cents": total_cents,
+        "amount": total_cents / 100.0,
+        "currency": "usd",
+        "status": "initiated",
+        "payment_status": "pending",
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    })
+    await db.print_orders.insert_one({
+        "order_id": order_id,
+        "session_id": session.id,
+        "product_id": req.product_id,
+        "product_title": product.get("title"),
+        "customer_email": (req.contact_email or "").lower(),
+        "customer_name": req.contact_name or "",
+        "config": req.config,
+        "shipping_carrier_code": req.shipping_carrier_code,
+        "shipping_country": req.shipping_country,
+        "shipping_postal": req.shipping_postal,
+        "quote_cents": int(req.quote_total_cents),
+        "shipping_cents": int(req.shipping_price_cents),
+        "total_cents": total_cents,
+        "status": "pending_payment",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"checkout_url": session.url, "session_id": session.id, "order_id": order_id, "amount_cents": total_cents}
+
+
+@api_router.get("/orders/status/{session_id}")
+async def order_status(session_id: str):
+    tx = await db.payment_transactions.find_one({"session_id": session_id})
+    if not tx:
+        raise HTTPException(404, "Transaction not found")
+    if tx.get("payment_status") != "paid":
+        try:
+            s = stripe.checkout.Session.retrieve(session_id)
+            if s.payment_status == "paid" or s.status == "complete":
+                await _mark_donation_paid(session_id)  # Also promotes print_orders
+                tx = await db.payment_transactions.find_one({"session_id": session_id})
+        except stripe.error.StripeError:
+            pass
+    order = await db.print_orders.find_one({"session_id": session_id}, {"_id": 0}) if tx.get("order_id") else None
+    return {
+        "session_id": tx["session_id"],
+        "status": tx["status"],
+        "payment_status": tx["payment_status"],
+        "amount_cents": tx.get("amount_cents", 0),
+        "order_id": tx.get("order_id"),
+        "order": order,
+    }
+
 
 app.include_router(api_router)
 

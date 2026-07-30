@@ -19,6 +19,7 @@ import AuthCallback from "@/pages/AuthCallback";
 import AdminProducts from "@/pages/AdminProducts";
 import DonateSuccess from "@/pages/DonateSuccess";
 import DonateCancel from "@/pages/DonateCancel";
+import OrderSuccess from "@/pages/OrderSuccess";
 import Supporters from "@/pages/Supporters";
 import Profile from "@/pages/Profile";
 import "@/i18n";
@@ -49,6 +50,7 @@ function AppRouter() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/donate/success" element={<DonateSuccess />} />
           <Route path="/donate/cancel" element={<DonateCancel />} />
+          <Route path="/order/success" element={<OrderSuccess />} />
         </Routes>
       </main>
       <Footer onOpenContact={() => setContactOpen(true)} />

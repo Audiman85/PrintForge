@@ -1,0 +1,47 @@
+{
+  "summary": "Iteration 4 tested all 4 shipped features end-to-end. Backend: 24/24 pytest tests PASS across test_orders.py (checkout success returns cs_/ord_ ids + $32.00 total, verified payment_transactions purpose='print_order' and print_orders status='pending_payment'; bad product_id -> 404; zero/negative quote -> 400; status pending; unknown session -> 404; webhook flips print_orders to paid idempotently), test_restock.py (subscribe valid + invalid email 400 + missing material 400 + idempotent upsert on (email,material) with colours updated in-place; /restock/subscriptions requires auth 401 & returns email_provider_configured=false; /restock/notify requires auth 401, queues to restock_notifications with outcome='queued', updates last_notified_at, matches empty-colours 'any' subscribers), test_bulk.py (template CSV has header + 2 rows, text/csv content-type; POST unauth 401; upload with template CSV inserts 2 products & titles appear via /api/products; invalid category row is reported per-row not crash; missing required cols -> 400; non-csv -> 400), test_supporter_emails.py (endpoint returns {emails:[]} lowercased; seeded email via webhook + supporter row appears in listing). Donations regression 19/19 still PASS. Frontend: mobile @390 product page shows buy-now-btn and mobile-cta-order; clicking buy-now POSTs /api/orders/checkout (200 + checkout_url) and navigates to checkout.stripe.com (US$35.70 shown). /admin/products (with seeded auth session in localStorage) renders bulk-upload dropzone + bulk-template-link, bulk-submit disabled before file, uploading template CSV shows bulk-result with '2 added' & TEST_ products appear in Current catalog. Restock modal: after enabling advanced-toggle + switching to PETG material + SINGLE COLOUR mode, OOS Blue swatch shows Bell icon and clicking it opens restock-modal; POST /api/restock/subscribe returns 200 and restock-success view renders. CRITICAL FRONTEND BUG: Community page (/community) crashes with 'ReferenceError: supporterEmails is not defined' in Community.jsx line 98 whenever a design has a non-empty author_email — supporterEmails is referenced but never declared/fetched. Currently the page appears intact ONLY because the sole seeded design lacked author_email; as soon as I seeded a design with author_email the entire route crashed to a red error overlay and no design cards render.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Community.jsx", "issue": "ReferenceError: supporterEmails is not defined (line 98). Component references `supporterEmails.has((d.author_email||'').toLowerCase())` but never declares state or fetches /api/supporters/emails. Any design with a truthy author_email crashes the entire /community route to a red error overlay.", "selector": "[data-testid='designs-grid']", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [
+      {"flow": "Community supporter badge", "issue": "Because of the ReferenceError above, no supporter-badge is ever rendered on the community grid — feature completely non-functional. /api/supporters/emails backend endpoint works fine and returns the seeded email; only the frontend wire-up is missing.", "affected_selectors": ["[data-testid='supporter-badge']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_orders.py",
+    "/app/backend/tests/test_restock.py",
+    "/app/backend/tests/test_bulk.py",
+    "/app/backend/tests/test_supporter_emails.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/iter4_results.xml"
+  ],
+  "action_items": [
+    "Fix Community.jsx: add `const [supporterEmails, setSupporterEmails] = useState(new Set())` and inside the load useEffect also call `api.get('/supporters/emails').then(r => setSupporterEmails(new Set(r.data.emails)))`. Wrap check as `supporterEmails?.has(...)` for safety."
+  ],
+  "critical_code_review_comments": [
+    "server.py has grown to 1650 lines — restock/bulk/orders modules should be extracted alongside the earlier suggestion to split donations/quote/chat/products.",
+    "orders_checkout does NOT validate that quote_total_cents is sane vs actual product-derived quote — client can POST any amount. For sandbox this is fine but flag for prod: server should compute (or at minimum re-verify) the quote using the same /api/quote logic so a hostile client can't pay $1 for a $100 print.",
+    "orders_checkout persists print_orders with contact_email from the request but never verifies email format (empty string accepted). Consider using EmailStr on the Pydantic model when contact_email is provided.",
+    "_mark_donation_paid handles both donation and print_order branches — fine, but the function name is misleading now. Consider renaming to `_mark_paid` or `_promote_paid_session`.",
+    "restock_notify uses synchronous requests.post inside an async endpoint (blocking event loop). Fine while RESEND is unset in preview, but before enabling Resend switch to httpx.AsyncClient (or run in threadpool).",
+    "bulk_import_products inserts each row with await inside a loop — for large CSVs use insert_many. Also no dedup by title.",
+    "Community.jsx references undefined `supporterEmails` (see frontend bug) — likely a merge/rebase artifact where the useState/useEffect was dropped."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py",
+    "/app/backend/tests/test_orders.py",
+    "/app/backend/tests/test_restock.py",
+    "/app/backend/tests/test_bulk.py",
+    "/app/backend/tests/test_supporter_emails.py"
+  ],
+  "success_rate": {"backend": "100% (24/24 new + 19/19 regression)", "frontend": "75% (3 of 4 flows OK — Community supporter badge blocked by JS crash)"},
+  "test_credentials": "Seeded a test session directly in mongo (test_database) per /app/auth_testing.md — session_token=test_session_fe_1785436582724 for FE bulk-upload test. Auth-required backend tests use conftest.py seeded_session fixture (auto-cleaned after run).",
+  "seed_data_creation": "Inserted several TEST_ rows in test_database: users/user_sessions (FE + backend fixtures — backend fixture is auto-cleaned; FE session persists), payment_transactions & print_orders for pending + paid states, restock_subscriptions + restock_notifications for materials PETG/TPU/ABS, supporters + designs for badge test (design_id des_TEST_1785436669016 with author_email test.badge.1785436669016@example.com, plus product_ids from CSV import prefixed TEST_UIVase_ / TEST_UIComb_ / TEST_Vase_ / TEST_Comb_ / TEST_GoodCat_).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend for all 4 iteration-4 features is 100% green (43 total tests including regression). Only outstanding issue is Community.jsx supporterEmails undefined — after main agent fixes it, retest supporter-badge visibility on /community by seeding a design with author_email matching a supporter email (or reuse the already-seeded des_TEST_1785436669016 / test.badge.1785436669016@example.com pair). Note: the earlier community page appeared to render fine before because no design had author_email. Also, admin/products FE test used localStorage session_token — dev session token is test_session_fe_1785436582724 if you need to reuse.",
+  "rca of the issue": "Community.jsx line 98 uses `supporterEmails.has(...)` but the component body never declares supporterEmails or fetches /api/supporters/emails. Fix: add `const [supporterEmails, setSupporterEmails] = useState(new Set());` after the designs state, and inside load() (or a second useEffect) call `api.get('/supporters/emails').then(r => setSupporterEmails(new Set((r.data.emails||[]).map(e => e.toLowerCase()))))`. Optionally defensively write `supporterEmails?.has(...)` to avoid crashing if the fetch hasn't returned yet."
+}

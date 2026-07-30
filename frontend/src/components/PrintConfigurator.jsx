@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Zap, Sparkles, Settings2, Info, ExternalLink, ShoppingBag } from "lucide-react";
+import { Zap, Sparkles, Settings2, Info, ExternalLink, ShoppingBag, Bell } from "lucide-react";
+import RestockAlertModal from "@/components/RestockAlertModal";
 
 const DEFAULT_PALETTE = [
   "#FF6B00", "#00F0FF", "#EDEDF0", "#5C5C66",
@@ -55,6 +56,8 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState({});
   const [storeLink, setStoreLink] = useState(null);
+  const [restockOpen, setRestockOpen] = useState(false);
+  const [restockColors, setRestockColors] = useState([]);
 
   // Poll filament stock every 30s + fetch AnyCubic store URL for current material
   useEffect(() => {
@@ -353,14 +356,20 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
                                 <button
                                   key={sc.name}
                                   type="button"
-                                  title={disabled ? `${sc.name} · restocks in ${st.restock_hours || "?"}h` : `${sc.name}${st.low_stock ? " · low" : ""}`}
-                                  onClick={() => !disabled && changeColor(i, sc.hex)}
-                                  disabled={disabled}
+                                  title={disabled ? `${sc.name} · alert me on restock` : `${sc.name}${st.low_stock ? " · low" : ""}`}
+                                  onClick={() => {
+                                    if (disabled) {
+                                      setRestockColors([sc.name]);
+                                      setRestockOpen(true);
+                                    } else {
+                                      changeColor(i, sc.hex);
+                                    }
+                                  }}
                                   data-testid={`std-color-${i}-${sc.name.toLowerCase()}`}
-                                  className={`relative w-3.5 h-3.5 rounded-full border transition ${c === sc.hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"} ${disabled ? "opacity-25 grayscale cursor-not-allowed" : st.low_stock ? "opacity-70" : ""}`}
+                                  className={`relative w-3.5 h-3.5 rounded-full border transition ${c === sc.hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"} ${disabled ? "opacity-40 grayscale hover:opacity-70" : st.low_stock ? "opacity-70" : ""}`}
                                   style={{ background: sc.hex }}
                                 >
-                                  {disabled && <span className="absolute inset-0 flex items-center justify-center text-[7px] text-forge-primary">×</span>}
+                                  {disabled && <Bell className="absolute -top-1 -right-1 w-2 h-2 text-forge-primary"/>}
                                 </button>
                               );
                             })}
@@ -395,14 +404,20 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
                                 <button
                                   key={name}
                                   type="button"
-                                  title={disabled ? `${name} · restocks in ${st.restock_hours || "?"}h` : `${name}${st.low_stock ? " · low" : ""}`}
-                                  onClick={() => !disabled && changeColor(i, hex)}
-                                  disabled={disabled}
+                                  title={disabled ? `${name} · alert me on restock` : `${name}${st.low_stock ? " · low" : ""}`}
+                                  onClick={() => {
+                                    if (disabled) {
+                                      setRestockColors([name]);
+                                      setRestockOpen(true);
+                                    } else {
+                                      changeColor(i, hex);
+                                    }
+                                  }}
                                   data-testid={`palette-${material}-${i}-${name.toLowerCase()}`}
-                                  className={`relative w-3.5 h-3.5 rounded-full border transition ${c === hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"} ${disabled ? "opacity-25 grayscale cursor-not-allowed" : st.low_stock ? "opacity-70" : ""}`}
+                                  className={`relative w-3.5 h-3.5 rounded-full border transition ${c === hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"} ${disabled ? "opacity-40 grayscale hover:opacity-70" : st.low_stock ? "opacity-70" : ""}`}
                                   style={{ background: hex }}
                                 >
-                                  {disabled && <span className="absolute inset-0 flex items-center justify-center text-[7px] text-forge-primary">×</span>}
+                                  {disabled && <Bell className="absolute -top-1 -right-1 w-2 h-2 text-forge-primary"/>}
                                 </button>
                               );
                             })}
@@ -483,6 +498,13 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
           <div className="text-forge-muted text-sm">Calculating quote…</div>
         )}
       </div>
+
+      <RestockAlertModal
+        open={restockOpen}
+        onOpenChange={setRestockOpen}
+        material={material}
+        colors={restockColors}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { Plus, PackageOpen, ImagePlus, Trash2, Sparkles, Calculator } from "luci
 import { toast } from "sonner";
 import ModelPreview from "@/components/ModelPreview";
 import ProductCalculator from "@/components/ProductCalculator";
+import BulkCSVUpload from "@/components/BulkCSVUpload";
 
 const SHAPES = ["torusknot", "sphere", "icosahedron", "dodecahedron", "octahedron", "cone", "cylinder", "box"];
 
@@ -227,9 +228,13 @@ export default function AdminProducts() {
       </div>
 
       {/* Existing products */}
-      <div className="mt-12">
-        <h3 className="font-display text-forge-text text-2xl mb-4">Current catalog · {products.length} items</h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="admin-product-list">
+      <div className="mt-12 space-y-6">
+        <BulkCSVUpload onImported={async () => {
+          try { const { data } = await api.get("/products"); setProducts(data); } catch {}
+        }}/>
+        <div>
+          <h3 className="font-display text-forge-text text-2xl mb-4">Current catalog · {products.length} items</h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="admin-product-list">
           {products.map(p => (
             <div key={p.product_id} className="card-forge p-4 flex items-center gap-3">
               <img src={p.image_url} alt={p.title} className="w-14 h-14 rounded object-cover"/>
@@ -242,6 +247,7 @@ export default function AdminProducts() {
               </button>
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>

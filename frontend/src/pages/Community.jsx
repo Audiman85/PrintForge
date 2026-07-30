@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Upload, Heart, Download, FileBox } from "lucide-react";
 import { toast } from "sonner";
 import ShareButtons from "@/components/ShareButtons";
+import SupporterBadge from "@/components/SupporterBadge";
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 function loginWithGoogle() {
@@ -92,7 +93,12 @@ export default function Community() {
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-display text-forge-text text-lg leading-tight line-clamp-1">{d.title}</h3>
                 </div>
-                <p className="text-xs text-forge-muted font-mono">by {d.author_name}</p>
+                <p className="text-xs text-forge-muted font-mono flex items-center gap-1.5">
+                  by {d.author_name}
+                  {d.author_email && supporterEmails.has((d.author_email || "").toLowerCase()) && (
+                    <SupporterBadge compact/>
+                  )}
+                </p>
                 <p className="text-sm text-forge-muted line-clamp-2">{d.description || "No description"}</p>
                 <div className="flex flex-wrap gap-1.5">{(d.tags||[]).slice(0,3).map(t=><span key={t} className="chip text-[9px]">#{t}</span>)}</div>
                 <div className="flex items-center justify-between pt-2 border-t border-forge-border/60">

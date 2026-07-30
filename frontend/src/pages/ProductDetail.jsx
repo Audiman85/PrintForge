@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import ModelPreview from "@/components/ModelPreview";
 import PrintConfigurator from "@/components/PrintConfigurator";
 import ShippingQuotes from "@/components/ShippingQuotes";
+import BuyNowButton from "@/components/BuyNowButton";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -169,9 +170,29 @@ export default function ProductDetail() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-forge-border">
+              <BuyNowButton
+                product={p}
+                quote={pricingMode === "fixed"
+                  ? { total_price: printSubtotal, quantity: 1, line_subtotal: printSubtotal }
+                  : customQuote}
+                shipping={shipping}
+                config={{
+                  ...(previewState.config || {}),
+                  colors: previewState.colors,
+                  quantity: pricingMode === "quote" ? (customQuote?.quantity || 1) : 1,
+                  pricing_mode: pricingMode,
+                  fixed_price: p.price,
+                }}
+                contactEmail={user?.email}
+                className="flex-1"
+              />
               <Link to={`/print?product=${p.product_id}&mode=${pricingMode}`} className="flex-1">
-                <Button className="btn-forge w-full rounded-full py-6 text-base" data-testid="request-print-btn">
-                  <Rocket className="w-4 h-4 mr-2"/> {pricingMode === "fixed" ? "Order at fixed price" : t("product.request_print")}
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full py-6 border-forge-border bg-transparent text-forge-text hover:bg-forge-elevated hover:text-forge-text"
+                  data-testid="request-print-btn"
+                >
+                  <Rocket className="w-4 h-4 mr-2"/> Custom order form
                 </Button>
               </Link>
               <Button
@@ -203,11 +224,23 @@ export default function ProductDetail() {
             ${printSubtotal.toFixed(2)} print + ${shippingCost.toFixed(2)} shipping
           </div>
         </div>
-        <Link to={`/print?product=${p.product_id}&mode=${pricingMode}`}>
-          <Button className="btn-forge rounded-full px-5 py-5" data-testid="mobile-cta-order">
-            <Rocket className="w-4 h-4 mr-2"/> Add to cart
-          </Button>
-        </Link>
+        <BuyNowButton
+          product={p}
+          quote={pricingMode === "fixed"
+            ? { total_price: printSubtotal, quantity: 1, line_subtotal: printSubtotal }
+            : customQuote}
+          shipping={shipping}
+          config={{
+            ...(previewState.config || {}),
+            colors: previewState.colors,
+            quantity: pricingMode === "quote" ? (customQuote?.quantity || 1) : 1,
+            pricing_mode: pricingMode,
+            fixed_price: p.price,
+          }}
+          contactEmail={user?.email}
+          compact
+          data-testid="mobile-cta-order"
+        />
       </div>
       {/* Bottom spacer so content isn't hidden behind sticky bar on mobile */}
       <div className="lg:hidden h-24"/>
