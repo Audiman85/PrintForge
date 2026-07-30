@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { UploadCloud, FileBox, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import StlPreview from "@/components/StlPreview";
 
 const MATERIALS = ["PLA","PETG","ABS","TPU","Resin","Wood-PLA","Silk-PLA"];
 const COLORS = ["Any","Black","White","Grey","Red","Blue","Green","Yellow","Orange","Purple","Multi"];
@@ -87,7 +88,7 @@ export default function PrintRequest() {
       <form onSubmit={submit} className="mt-10 grid lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3 space-y-4">
           <div
-            className={`dropzone ${drag ? "active" : ""} p-10 flex flex-col items-center justify-center text-center min-h-[280px]`}
+            className={`dropzone ${drag ? "active" : ""} p-8 flex flex-col items-center justify-center text-center min-h-[220px]`}
             onDragOver={(e)=>{e.preventDefault(); setDrag(true);}}
             onDragLeave={()=>setDrag(false)}
             onDrop={onDrop}
@@ -104,15 +105,18 @@ export default function PrintRequest() {
                 </label>
               </>
             ) : (
-              <div className="w-full flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <FileBox className="w-10 h-10 text-forge-primary"/>
-                  <div className="text-left">
-                    <p className="font-display text-forge-text">{file.name}</p>
-                    <p className="text-xs text-forge-muted font-mono">{(file.size/1024/1024).toFixed(2)} MB</p>
+              <div className="w-full space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <FileBox className="w-8 h-8 text-forge-primary"/>
+                    <div className="text-left">
+                      <p className="font-display text-forge-text">{file.name}</p>
+                      <p className="text-xs text-forge-muted font-mono">{(file.size/1024/1024).toFixed(2)} MB · {file.name.split(".").pop().toUpperCase()}</p>
+                    </div>
                   </div>
+                  <button type="button" onClick={()=>setFile(null)} className="p-2 rounded-full hover:bg-forge-elevated" data-testid="remove-file-btn"><X className="w-4 h-4"/></button>
                 </div>
-                <button type="button" onClick={()=>setFile(null)} className="p-2 rounded-full hover:bg-forge-elevated" data-testid="remove-file-btn"><X className="w-4 h-4"/></button>
+                <StlPreview file={file} color="#FF6B00" height={320}/>
               </div>
             )}
           </div>

@@ -4,8 +4,10 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ProductCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Package, FileBox, Upload, ArrowUpRight, Clock } from "lucide-react";
+import { Heart, Package, FileBox, Upload, ArrowUpRight, Clock, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SocialsProfile from "@/components/SocialsProfile";
+import ShareButtons from "@/components/ShareButtons";
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
@@ -59,6 +61,7 @@ export default function Dashboard() {
           <TabsTrigger value="wishlist" data-testid="tab-wishlist" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">Wishlist</TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">Orders</TabsTrigger>
           <TabsTrigger value="designs" data-testid="tab-designs" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">My Designs</TabsTrigger>
+          <TabsTrigger value="profile" data-testid="tab-profile" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">Profile</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-8">
@@ -125,7 +128,10 @@ export default function Dashboard() {
                 <div key={d.design_id} className="card-forge p-4" data-testid={`my-design-${d.design_id}`}>
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <h4 className="font-display text-forge-text">{d.title}</h4>
-                    {d.is_public ? <span className="chip chip-tech">PUBLIC</span> : <span className="chip">PRIVATE</span>}
+                    <div className="flex items-center gap-2">
+                      {d.is_public ? <span className="chip chip-tech">PUBLIC</span> : <span className="chip">PRIVATE</span>}
+                      <ShareButtons url={`${window.location.origin}/community#${d.design_id}`} title={`${d.title} on PrintForge`} compact/>
+                    </div>
                   </div>
                   <p className="text-xs text-forge-muted font-mono truncate">{d.original_filename}</p>
                   <div className="flex gap-4 mt-3 text-xs text-forge-muted font-mono">
@@ -136,6 +142,10 @@ export default function Dashboard() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="profile" className="mt-8">
+          <SocialsProfile user={user}/>
         </TabsContent>
       </Tabs>
     </div>

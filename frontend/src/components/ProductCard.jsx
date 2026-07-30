@@ -3,6 +3,7 @@ import { Heart, Clock, Layers } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import ShareButtons from "@/components/ShareButtons";
 
 export default function ProductCard({ product, inWishlist, onWishlistChange }) {
   const { user } = useAuth();
@@ -35,6 +36,13 @@ export default function ProductCard({ product, inWishlist, onWishlistChange }) {
         >
           <Heart className={`w-4 h-4 ${inWishlist ? "fill-current" : ""}`}/>
         </button>
+        <div className="absolute top-3 right-14" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          <ShareButtons
+            url={`${window.location.origin}/product/${product.product_id}`}
+            title={`${product.title} · $${product.price} on PrintForge`}
+            compact
+          />
+        </div>
         <div className="absolute bottom-3 left-3 flex gap-1.5">
           <span className="chip chip-tech">{product.material}</span>
           <span className="chip">{product.category}</span>

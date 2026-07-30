@@ -152,17 +152,28 @@ class QuoteRequest(BaseModel):
     infill_pct: int = 20                         # 5..100
 
 # ------------------------- Pricing engine -------------------------
+# Available filaments — Silk-PLA & Carbon-PLA are premium colour-capable variants.
+# ASA is currently stocked in Black only; Carbon-PETG is a black-only multi-material capable filament.
 MATERIAL_PRICE_PER_GRAM = {
-    "PLA":       0.05,
-    "PETG":      0.06,
-    "ABS":       0.055,
-    "TPU":       0.09,
-    "Wood-PLA":  0.09,
-    "Silk-PLA":  0.075,
-    "Carbon-PLA":0.13,
-    "Resin":     0.18,
-    "PA (Nylon)":0.15,
-    "PC":        0.14,
+    "PLA":         0.05,
+    "PETG":        0.06,
+    "ABS":         0.055,
+    "TPU":         0.09,
+    "Silk-PLA":    0.075,
+    "Carbon-PLA":  0.13,
+    "ASA":         0.085,
+    "Carbon-PETG": 0.14,
+}
+# Colour availability per material. `null`/empty => full palette available.
+MATERIAL_COLORS = {
+    "PLA":         None,
+    "PETG":        None,
+    "ABS":         None,
+    "TPU":         None,
+    "Silk-PLA":    None,
+    "Carbon-PLA":  None,
+    "ASA":         ["Black"],           # currently only stocked in black
+    "Carbon-PETG": ["Black"],           # multi-material capable but only black stocked
 }
 QUALITY_MULT = {"draft": 0.85, "regular": 1.00, "hi": 1.35}
 QUALITY_LAYER_MM = {"draft": 0.28, "regular": 0.20, "hi": 0.12}
@@ -322,12 +333,18 @@ async def create_product(payload: ProductCreate):
 async def quote_config():
     return {
         "materials": [
-            {"name": m, "price_per_gram": p} for m, p in MATERIAL_PRICE_PER_GRAM.items()
+            {
+                "name": m,
+                "price_per_gram": p,
+                "available_colors": MATERIAL_COLORS.get(m),
+                "single_colour_only": bool(MATERIAL_COLORS.get(m)) and len(MATERIAL_COLORS[m]) == 1,
+                "advanced": m not in ("PLA",),   # PLA is the "standard" default; others live under Advanced
+            } for m, p in MATERIAL_PRICE_PER_GRAM.items()
         ],
         "qualities": [
             {"name": "draft",   "label": "Draft",    "layer_mm": QUALITY_LAYER_MM["draft"],   "multiplier": QUALITY_MULT["draft"]},
-            {"name": "regular", "label": "Regular",  "layer_mm": QUALITY_LAYER_MM["regular"], "multiplier": QUALITY_MULT["regular"]},
-            {"name": "hi",      "label": "Hi (fine)","layer_mm": QUALITY_LAYER_MM["hi"],      "multiplier": QUALITY_MULT["hi"]},
+            {"name": "regular", "label": "Standard",  "layer_mm": QUALITY_LAYER_MM["regular"], "multiplier": QUALITY_MULT["regular"]},
+            {"name": "hi",      "label": "High Quality","layer_mm": QUALITY_LAYER_MM["hi"],      "multiplier": QUALITY_MULT["hi"]},
         ],
         "nozzles": [
             {"mm": 0.25, "label": "0.25 · Fine detail", "multiplier": NOZZLE_MULT[0.25]},
@@ -335,6 +352,15 @@ async def quote_config():
             {"mm": 0.6,  "label": "0.6 · Faster",       "multiplier": NOZZLE_MULT[0.6]},
             {"mm": 0.8,  "label": "0.8 · Bulk",         "multiplier": NOZZLE_MULT[0.8]},
         ],
+        "standard": {
+            "material": "PLA",
+            "quality": "regular",
+            "nozzle_mm": 0.4,
+            "colors": 1,
+            "infill_pct": 20,
+            "quantity": 1,
+            "description": "We handle every small detail — Standard PLA, 0.4mm nozzle, 0.20mm layers, 20% infill. Best quality-to-price for most prints.",
+        },
         "max_colors": 8,
         "shipping_base": SHIPPING_BASE,
         "labour_fixed": LABOUR_FIXED,
@@ -755,7 +781,7 @@ SEED_PRODUCTS = [
     {"title": "Tabletop Terrain Tile Set", "description": "6-piece modular sci-fi terrain tiles for tabletop wargaming.", "category": "gaming", "price": 46.0, "print_time_hours": 14.0, "print_weight_grams": 220, "preview_shape": "octahedron", "recommended_colors": 4, "material": "PLA", "image_url": "https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["terrain", "wargaming", "modular"]},
     {"title": "Cable Management Clips (x10)", "description": "Snap-on cable clips for standard desk edges. Clean cable routing in minutes.", "category": "home", "price": 8.0, "print_time_hours": 2.0, "print_weight_grams": 25, "preview_shape": "cylinder", "recommended_colors": 1, "material": "PETG", "image_url": "https://images.pexels.com/photos/30720501/pexels-photo-30720501.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["cables", "clip", "utility"]},
     {"title": "Geometric Planter", "description": "Hexagonal succulent planter with drainage insert. Two-part print.", "category": "home", "price": 22.0, "print_time_hours": 4.5, "print_weight_grams": 130, "preview_shape": "dodecahedron", "recommended_colors": 2, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800", "tags": ["planter", "geometric", "plants"]},
-    {"title": "Miniature Knight (32mm)", "description": "Detailed 32mm knight miniature for tabletop RPG campaigns.", "category": "gaming", "price": 12.0, "print_time_hours": 3.0, "print_weight_grams": 18, "preview_shape": "cone", "recommended_colors": 5, "material": "Resin", "image_url": "https://images.unsplash.com/photo-1611329695518-1763fc1fcf4d?w=800", "tags": ["mini", "rpg", "resin"]},
+    {"title": "Miniature Knight (32mm)", "description": "Detailed 32mm knight miniature for tabletop RPG campaigns.", "category": "gaming", "price": 12.0, "print_time_hours": 3.0, "print_weight_grams": 18, "preview_shape": "cone", "recommended_colors": 5, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1611329695518-1763fc1fcf4d?w=800", "tags": ["mini", "rpg"]},
     {"title": "Phone Stand — Adjustable", "description": "Tilt-adjustable phone stand with integrated cable pass-through.", "category": "home", "price": 14.0, "print_time_hours": 2.5, "print_weight_grams": 70, "preview_shape": "box", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1512446816042-444d641267d4?w=800", "tags": ["phone", "stand", "adjustable"]},
     {"title": "Voronoi Lamp Shade", "description": "Organic voronoi lattice lamp shade. Diffuses warm light beautifully.", "category": "art", "price": 38.0, "print_time_hours": 12.0, "print_weight_grams": 180, "preview_shape": "sphere", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=800", "tags": ["lamp", "voronoi", "decor"]},
 ]
@@ -920,6 +946,44 @@ async def chat_rooms(user=Depends(get_current_user)):
         raise HTTPException(403, "Owner access only")
     rooms = await db.chat_rooms.find({}, {"_id": 0}).sort("last_message_at", -1).to_list(200)
     return rooms
+
+# ------------------------- User profile / socials -------------------------
+class SocialsUpdate(BaseModel):
+    twitter: Optional[str] = ""
+    instagram: Optional[str] = ""
+    facebook: Optional[str] = ""
+    tiktok: Optional[str] = ""
+    youtube: Optional[str] = ""
+    website: Optional[str] = ""
+    bio: Optional[str] = ""
+
+@api_router.get("/profile/socials")
+async def get_socials(user=Depends(get_current_user)):
+    return user.get("socials") or {}
+
+@api_router.put("/profile/socials")
+async def update_socials(payload: SocialsUpdate, user=Depends(get_current_user)):
+    socials = {k: (v or "").strip() for k, v in payload.model_dump().items()}
+    await db.users.update_one({"user_id": user["user_id"]}, {"$set": {"socials": socials}})
+    return socials
+
+# ------------------------- Contact info (shop owner) -------------------------
+@api_router.get("/contact")
+async def get_contact():
+    return {
+        "email": os.environ.get("SHOP_EMAIL", "hello@printforge.demo"),
+        "phone": os.environ.get("SHOP_PHONE", "+1 (555) 010-3456"),
+        "hours": os.environ.get("SHOP_HOURS", "Mon–Fri · 9am–6pm PT"),
+        "address": os.environ.get("SHOP_ADDRESS", "PrintForge Lab · San Francisco, CA"),
+        "facebook_page_id": os.environ.get("FACEBOOK_PAGE_ID", "printforge"),
+        "socials": {
+            "twitter": os.environ.get("SHOP_TWITTER", "printforge"),
+            "instagram": os.environ.get("SHOP_INSTAGRAM", "printforge"),
+            "facebook": os.environ.get("SHOP_FACEBOOK", "printforge"),
+            "tiktok": os.environ.get("SHOP_TIKTOK", "printforge"),
+            "youtube": os.environ.get("SHOP_YOUTUBE", "@printforge"),
+        }
+    }
 
 app.include_router(api_router)
 

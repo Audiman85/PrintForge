@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/ChatWidget";
+import ContactModal from "@/components/ContactModal";
 import Home from "@/pages/Home";
 import SearchPage from "@/pages/SearchPage";
 import ProductDetail from "@/pages/ProductDetail";
@@ -15,10 +17,12 @@ import "@/i18n";
 
 function AppRouter() {
   const location = useLocation();
+  const [contactOpen, setContactOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   if (location.hash?.includes("session_id=")) return <AuthCallback />;
   return (
     <>
-      <Header />
+      <Header onOpenContact={() => setContactOpen(true)} onOpenChat={() => setChatOpen(true)} />
       <main className="relative">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -29,8 +33,9 @@ function AppRouter() {
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </main>
-      <Footer />
-      <ChatWidget />
+      <Footer onOpenContact={() => setContactOpen(true)} />
+      <ContactModal open={contactOpen} onOpenChange={setContactOpen} onOpenChat={() => setChatOpen(true)} />
+      <ChatWidget openState={chatOpen} onOpenChange={setChatOpen} />
     </>
   );
 }

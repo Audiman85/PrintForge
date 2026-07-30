@@ -12,10 +12,12 @@ function loginWithGoogle() {
   window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
 }
 
-export default function ChatWidget() {
+export default function ChatWidget({ openState, onOpenChange }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = openState !== undefined ? openState : openInternal;
+  const setOpen = (v) => { if (onOpenChange) onOpenChange(v); else setOpenInternal(v); };
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);

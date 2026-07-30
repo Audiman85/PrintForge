@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Upload, Heart, Download, FileBox } from "lucide-react";
 import { toast } from "sonner";
+import ShareButtons from "@/components/ShareButtons";
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 function loginWithGoogle() {
@@ -87,9 +88,16 @@ export default function Community() {
                   <button onClick={()=>like(d.design_id)} className="flex items-center gap-1.5 text-sm text-forge-muted hover:text-forge-primary transition" data-testid={`like-${d.design_id}`}>
                     <Heart className="w-4 h-4"/> {d.likes || 0}
                   </button>
-                  <a href={`${process.env.REACT_APP_BACKEND_URL}/api/files/download?path=${encodeURIComponent(d.storage_path)}`} className="flex items-center gap-1.5 text-sm text-forge-tech hover:text-forge-primary transition" data-testid={`download-${d.design_id}`}>
-                    <Download className="w-4 h-4"/> Download
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <ShareButtons
+                      url={`${window.location.origin}/community#${d.design_id}`}
+                      title={`${d.title} — free 3D design on PrintForge`}
+                      compact
+                    />
+                    <a href={`${process.env.REACT_APP_BACKEND_URL}/api/files/download?path=${encodeURIComponent(d.storage_path)}`} className="flex items-center gap-1.5 text-sm text-forge-tech hover:text-forge-primary transition" data-testid={`download-${d.design_id}`}>
+                      <Download className="w-4 h-4"/> Download
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

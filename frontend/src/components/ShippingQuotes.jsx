@@ -4,8 +4,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Truck, Clock, Shield, Leaf, Zap, MapPin, Package as PackageIcon, Check, TrendingDown } from "lucide-react";
+import { Truck, Clock, Shield, Leaf, Zap, MapPin, Package as PackageIcon, TrendingDown, Moon } from "lucide-react";
+
+// Curated subset — includes overnight options
+const CARRIER_ORDER = [
+  "eco_pickup",
+  "usps_ground",
+  "ups_ground",
+  "usps_priority",
+  "fedex_2day",
+  "ups_next_air",
+  "fedex_overnight",
+];
 
 const COUNTRIES = [
   { code: "US", name: "United States" },
@@ -20,22 +30,25 @@ const COUNTRIES = [
   { code: "BR", name: "Brazil" },
 ];
 
+function daysLabel(q) {
+  if (q.days_min === 0 && q.days_max <= 1) return "Same/next day";
+  if (q.days_min === 1 && q.days_max === 1) return "Overnight";
+  if (q.days_min === q.days_max) return `${q.days_min} day${q.days_min > 1 ? "s" : ""}`;
+  return `${q.days_min}–${q.days_max} days`;
+}
+
 export default function ShippingQuotes({ weightGrams = 100, items = 1, onSelect, initialCountry = "US" }) {
   const [country, setCountry] = useState(initialCountry);
   const [postal, setPostal] = useState("");
   const [signature, setSignature] = useState(false);
   const [insuredValue, setInsuredValue] = useState(0);
-  const [quotes, setQuotes] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState(null);
+  const [selectedCode, setSelectedCode] = useState(null);
 
   const req = useMemo(() => ({
-    weight_grams: weightGrams,
-    items,
-    country,
-    postal_code: postal,
-    signature_required: signature,
-    insured_value: Number(insuredValue) || 0,
+    weight_grams: weightGrams, items, country, postal_code: postal,
+    signature_required: signature, insured_value: Number(insuredValue) || 0,
   }), [weightGrams, items, country, postal, signature, insuredValue]);
 
   useEffect(() => {
@@ -43,13 +56,22 @@ export default function ShippingQuotes({ weightGrams = 100, items = 1, onSelect,
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const { data } = await api.post("/shipping/quotes", req);
+        const { data: res } = await api.post("/shipping/quotes", req);
         if (!cancelled) {
-          setQuotes(data);
-          if (!selected && data.quotes?.length) {
-            const s = data.quotes.find(q => q.carrier_code === data.cheapest_code) || data.quotes[0];
-            setSelected(s.carrier_code);
-            onSelect?.(s);
+          const filtered = res.quotes.filter(q => CARRIER_ORDER.includes(q.carrier_code))
+            .sort((a, b) => CARRIER_ORDER.indexOf(a.carrier_code) - CARRIER_ORDER.indexOf(b.carrier_code));
+          const cheapest = [...filtered].sort((a,b)=>a.price-b.price)[0]?.carrier_code;
+          const fastest = [...filtered].sort((a,b)=>a.days_max-b.days_max)[0]?.carrier_code;
+          const overnight = filtered.filter(q => q.days_max === 1);
+          const payload = { ...res, quotes: filtered, cheapest_code: cheapest, fastest_code: fastest, overnight };
+          setData(payload);
+          if (!selectedCode && payload.quotes.length) {
+            const preferred = payload.quotes.find(q => q.carrier_code === "usps_priority") || payload.quotes[0];
+            setSelectedCode(preferred.carrier_code);
+            onSelect?.(preferred);
+          } else if (selectedCode) {
+            const same = payload.quotes.find(q => q.carrier_code === selectedCode);
+            if (same) onSelect?.(same);
           }
         }
       } finally { if (!cancelled) setLoading(false); }
@@ -58,16 +80,21 @@ export default function ShippingQuotes({ weightGrams = 100, items = 1, onSelect,
     // eslint-disable-next-line
   }, [req]);
 
-  const pick = (q) => { setSelected(q.carrier_code); onSelect?.(q); };
+  const pickByCode = (code) => {
+    setSelectedCode(code);
+    const q = data?.quotes.find(x => x.carrier_code === code);
+    if (q) onSelect?.(q);
+  };
+
+  const selected = data?.quotes.find(q => q.carrier_code === selectedCode);
 
   return (
     <div className="card-forge p-6 space-y-5" data-testid="shipping-quotes">
       <div className="flex items-center gap-2">
         <Truck className="w-4 h-4 text-forge-primary"/>
-        <h3 className="font-display text-xl text-forge-text">Get shipping quotes</h3>
+        <h3 className="font-display text-xl text-forge-text">Shipping</h3>
       </div>
 
-      {/* Destination */}
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-1">
           <Label className="text-forge-text mb-2 block">Country</Label>
@@ -86,80 +113,74 @@ export default function ShippingQuotes({ weightGrams = 100, items = 1, onSelect,
         </div>
       </div>
 
+      {/* Delivery method dropdown */}
+      <div>
+        <Label className="text-forge-text mb-2 block">Delivery method</Label>
+        <Select value={selectedCode || ""} onValueChange={pickByCode} disabled={loading || !data}>
+          <SelectTrigger className="bg-forge-elevated border-forge-border text-forge-text h-14 py-2" data-testid="shipping-dropdown">
+            <SelectValue placeholder={loading ? "Loading rates…" : "Select delivery method"}/>
+          </SelectTrigger>
+          <SelectContent className="bg-forge-surface border-forge-border text-forge-text max-h-80">
+            {data?.quotes.map(q => {
+              const isCheap = q.carrier_code === data.cheapest_code;
+              const isFast = q.carrier_code === data.fastest_code;
+              const isOvernight = q.days_max === 1 && q.days_min <= 1;
+              return (
+                <SelectItem key={q.carrier_code} value={q.carrier_code} data-testid={`opt-${q.carrier_code}`}>
+                  <div className="flex items-center gap-3 w-full min-w-[380px]">
+                    <div className="w-9 h-9 rounded shrink-0 flex items-center justify-center font-mono text-[9px] font-bold text-white" style={{background:q.logo_bg}}>{q.logo_label}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-display text-forge-text truncate">{q.carrier_name}</span>
+                        {isCheap && <span className="chip chip-tech text-[8px]"><TrendingDown className="w-2 h-2"/> BEST</span>}
+                        {isFast && !isCheap && <span className="chip chip-primary text-[8px]"><Zap className="w-2 h-2"/> FAST</span>}
+                        {isOvernight && !isFast && <span className="chip chip-primary text-[8px]"><Moon className="w-2 h-2"/> OVERNIGHT</span>}
+                      </div>
+                      <div className="font-mono text-[10px] uppercase tracking-widest text-forge-muted mt-0.5">
+                        {daysLabel(q)}
+                      </div>
+                    </div>
+                    <div className="font-mono text-forge-primary text-base font-semibold shrink-0">${q.price.toFixed(2)}</div>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Details */}
+      {selected && (
+        <div className="p-4 rounded-lg bg-forge-elevated border border-forge-border space-y-2" data-testid="shipping-selected-detail">
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">Selected</div>
+              <div className="font-display text-forge-text text-lg">{selected.carrier_name}</div>
+            </div>
+            <div className="font-mono text-forge-primary text-2xl font-semibold" data-testid="shipping-price">${selected.price.toFixed(2)}</div>
+          </div>
+          <div className="flex items-center gap-4 text-[11px] font-mono text-forge-muted uppercase tracking-widest">
+            <span className="flex items-center gap-1"><Clock className="w-3 h-3"/> {daysLabel(selected)}</span>
+            {selected.tracked && <span className="flex items-center gap-1"><Shield className="w-3 h-3"/> Insured ${selected.insured_up_to}</span>}
+            <span className="flex items-center gap-1"><Leaf className="w-3 h-3"/> {selected.carbon_g}g CO₂</span>
+          </div>
+          {selected.note && <p className="text-xs text-forge-muted italic">{selected.note}</p>}
+        </div>
+      )}
+
       {/* Options */}
-      <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-forge-elevated border border-forge-border">
+      <div className="flex flex-wrap items-center gap-4 p-3 rounded-lg bg-forge-bg border border-forge-border">
         <div className="flex items-center gap-2">
           <Switch checked={signature} onCheckedChange={setSignature} data-testid="shipping-signature"/>
-          <Label className="text-sm text-forge-text">Signature on delivery</Label>
+          <Label className="text-sm text-forge-text">Signature</Label>
         </div>
         <div className="flex items-center gap-2 flex-1 min-w-[180px]">
           <Shield className="w-4 h-4 text-forge-tech"/>
-          <Label className="text-sm text-forge-text whitespace-nowrap">Insured value ($)</Label>
-          <Input
-            type="number" min={0} value={insuredValue}
-            onChange={(e) => setInsuredValue(e.target.value)}
-            className="bg-forge-bg border-forge-border text-forge-text h-8 w-24"
-            data-testid="shipping-insured"
-          />
+          <Label className="text-sm text-forge-text whitespace-nowrap">Insured ($)</Label>
+          <Input type="number" min={0} value={insuredValue} onChange={(e) => setInsuredValue(e.target.value)} className="bg-forge-elevated border-forge-border text-forge-text h-8 w-24" data-testid="shipping-insured"/>
         </div>
+        <span className="flex items-center gap-1 text-[10px] font-mono text-forge-muted"><PackageIcon className="w-3 h-3"/> {weightGrams}g · {items} item{items>1?"s":""}</span>
       </div>
-
-      {/* Package meta */}
-      <div className="flex items-center gap-4 text-xs font-mono text-forge-muted">
-        <span className="flex items-center gap-1"><PackageIcon className="w-3 h-3"/> {weightGrams}g</span>
-        <span>·</span>
-        <span>{items} item{items>1?"s":""}</span>
-        {quotes && (<>
-          <span>·</span>
-          <span className="text-forge-tech uppercase">Zone: {quotes.destination_zone}</span>
-        </>)}
-      </div>
-
-      {/* Quotes list */}
-      <div className="space-y-2" data-testid="shipping-list">
-        {loading && !quotes ? (
-          <>{[...Array(4)].map((_,i)=><div key={i} className="h-16 rounded-lg bg-forge-elevated animate-pulse"/>)}</>
-        ) : quotes?.quotes?.map(q => {
-          const isSelected = selected === q.carrier_code;
-          const isCheapest = q.carrier_code === quotes.cheapest_code;
-          const isFastest = q.carrier_code === quotes.fastest_code;
-          return (
-            <button
-              key={q.carrier_code}
-              type="button"
-              onClick={() => pick(q)}
-              data-testid={`carrier-${q.carrier_code}`}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg border transition text-left ${isSelected ? "border-forge-primary bg-forge-primary/5" : "border-forge-border bg-forge-elevated hover:border-forge-faint"}`}
-            >
-              <div className="w-11 h-11 rounded shrink-0 flex items-center justify-center font-mono text-[10px] font-bold text-white" style={{background: q.logo_bg}}>
-                {q.logo_label}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-display text-forge-text truncate">{q.carrier_name}</span>
-                  {isCheapest && <span className="chip chip-tech text-[9px]"><TrendingDown className="w-2.5 h-2.5"/> CHEAPEST</span>}
-                  {isFastest && !isCheapest && <span className="chip chip-primary text-[9px]"><Zap className="w-2.5 h-2.5"/> FASTEST</span>}
-                  {!q.tracked && <span className="chip text-[9px]">NO TRACKING</span>}
-                </div>
-                <div className="flex items-center gap-3 mt-1 font-mono text-[10px] text-forge-muted uppercase tracking-widest">
-                  <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5"/> {q.days_min === q.days_max ? `${q.days_min}d` : `${q.days_min}-${q.days_max}d`}</span>
-                  {q.tracked && <span className="flex items-center gap-1"><Shield className="w-2.5 h-2.5"/> Insured ${q.insured_up_to}</span>}
-                  <span className="flex items-center gap-1"><Leaf className="w-2.5 h-2.5"/> {q.carbon_g}gCO₂</span>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="font-mono text-forge-primary text-lg font-semibold">${q.price.toFixed(2)}</div>
-                {isSelected && <Check className="w-4 h-4 text-forge-tech ml-auto mt-1"/>}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      {quotes && (
-        <p className="text-[10px] font-mono text-forge-muted uppercase tracking-widest">
-          Live estimates · rates recalculate as you change destination, weight, or options
-        </p>
-      )}
     </div>
   );
 }

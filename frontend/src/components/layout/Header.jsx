@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
-import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn } from "lucide-react";
+import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
@@ -14,7 +14,7 @@ function loginWithGoogle() {
   window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
 }
 
-export default function Header() {
+export default function Header({ onOpenContact, onOpenChat }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -35,22 +35,33 @@ export default function Header() {
             <span className="font-mono text-[9px] tracking-[0.2em] text-forge-tech uppercase">3D · MARKETPLACE</span>
           </div>
         </Link>
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-6">
           <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
           <NavLink to="/search" className={linkCls} data-testid="nav-search">{t("nav.search")}</NavLink>
           <NavLink to="/community" className={linkCls} data-testid="nav-community">{t("nav.community")}</NavLink>
           <NavLink to="/print" className={linkCls} data-testid="nav-print">{t("nav.print")}</NavLink>
+          <button
+            onClick={() => onOpenContact?.()}
+            className="text-sm font-medium text-forge-text/80 hover:text-forge-text transition-colors"
+            data-testid="nav-contact"
+          >
+            Contact
+          </button>
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Link to="/print" data-testid="header-upload-btn">
+            <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech">
+              <Upload className="w-4 h-4 mr-2"/> <span className="hidden sm:inline">Upload</span>
+            </Button>
+          </Link>
           <LanguageSwitcher compact/>
           <Button
             variant="ghost" size="sm"
-            className="text-forge-muted hover:text-forge-text"
+            className="text-forge-muted hover:text-forge-text hidden md:inline-flex"
             onClick={() => navigate("/search")}
             data-testid="header-search-btn"
           >
-            <Search className="w-4 h-4 mr-2" /> <span className="hidden sm:inline">Search</span>
-            <span className="hidden lg:inline ml-3 font-mono text-[10px] px-1.5 py-0.5 rounded border border-forge-border">⌘K</span>
+            <Search className="w-4 h-4"/>
           </Button>
           {user ? (
             <DropdownMenu>
@@ -78,6 +89,9 @@ export default function Header() {
                   <Package className="w-4 h-4 mr-2"/> {t("nav.orders")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onOpenChat?.()} data-testid="menu-chat">
+                  <MessageSquare className="w-4 h-4 mr-2"/> Live chat
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={async () => { await logout(); navigate("/"); }} data-testid="menu-logout">
                   <LogOut className="w-4 h-4 mr-2"/> {t("nav.signout")}
                 </DropdownMenuItem>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-export default function Footer() {
+export default function Footer({ onOpenContact }) {
   return (
     <footer className="border-t border-forge-border mt-24 bg-forge-bg" data-testid="footer">
       <div className="max-w-7xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-8">
@@ -24,6 +24,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-forge-muted">
             <li><Link to="/print" className="hover:text-forge-text">Send Files To Print</Link></li>
             <li><Link to="/dashboard" className="hover:text-forge-text">Your Dashboard</Link></li>
+            <li><button onClick={() => onOpenContact?.()} className="hover:text-forge-text text-left" data-testid="footer-contact-btn">Contact Us</button></li>
           </ul>
         </div>
         <div>
