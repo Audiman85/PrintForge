@@ -2,7 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
-import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus } from "lucide-react";
+import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus, HandHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
@@ -77,6 +77,17 @@ export default function Header({ onOpenContact, onOpenChat }) {
           </div>
         </form>
         <div className="flex items-center gap-1 sm:gap-2">
+          <a
+            href={process.env.REACT_APP_DONATE_URL || "https://www.buymeacoffee.com/printforge"}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="donate-btn"
+            title="Support PrintForge"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-forge-border bg-transparent text-forge-muted hover:text-forge-primary hover:border-forge-primary transition text-xs font-mono uppercase tracking-widest"
+          >
+            <HandHeart className="w-3.5 h-3.5"/>
+            <span className="hidden xs:inline sm:inline">Donate</span>
+          </a>
           <div className="hidden sm:block"><LanguageSwitcher compact/></div>
           {user ? (
             <DropdownMenu>
