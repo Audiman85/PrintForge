@@ -19,7 +19,7 @@ export const LANGUAGES = [
 
 const resources = {
   en: { translation: {
-    nav: { marketplace: "Marketplace", search: "Search", community: "Community", print: "Send To Print", dashboard: "Dashboard", wishlist: "Wishlist", designs: "My Designs", orders: "My Orders", signin: "Sign in", signout: "Sign out" },
+    nav: { marketplace: "Home", search: "Search", community: "Community", print: "Send To Print", dashboard: "Dashboard", wishlist: "Wishlist", designs: "My Designs", orders: "My Orders", signin: "Sign in", signout: "Sign out" },
     hero: { eyebrow: "3D · PRINT · MARKETPLACE", title1: "Forge your next", title2: "three-dimensional", title3: "obsession.", desc: "Discover print-ready designs, search every major model site in one place, and send us any file to have it printed and shipped. A workbench for the maker era.", cta_search: "Search 3D models", cta_send: "Send a file to print" },
     market: { title: "Curated Marketplace", desc: "Hand-picked designs ready to order — every model tested and printed in our lab.", search_ph: "Search catalog…" },
     product: { back: "Back to marketplace", request_print: "Request a print" },
@@ -28,7 +28,7 @@ const resources = {
     lang: { label: "Language" },
   }},
   es: { translation: {
-    nav: { marketplace: "Mercado", search: "Buscar", community: "Comunidad", print: "Enviar a imprimir", dashboard: "Panel", wishlist: "Favoritos", designs: "Mis diseños", orders: "Mis pedidos", signin: "Entrar", signout: "Salir" },
+    nav: { marketplace: "Inicio", search: "Buscar", community: "Comunidad", print: "Enviar a imprimir", dashboard: "Panel", wishlist: "Favoritos", designs: "Mis diseños", orders: "Mis pedidos", signin: "Entrar", signout: "Salir" },
     hero: { eyebrow: "3D · IMPRESIÓN · MERCADO", title1: "Forja tu próxima", title2: "obsesión", title3: "tridimensional.", desc: "Descubre diseños listos para imprimir, busca en todos los sitios en un solo lugar y envíanos cualquier archivo para que lo imprimamos y enviemos.", cta_search: "Buscar modelos 3D", cta_send: "Enviar archivo" },
     market: { title: "Mercado curado", desc: "Diseños seleccionados listos para pedir — cada modelo probado en nuestro laboratorio.", search_ph: "Buscar catálogo…" },
     product: { back: "Volver al mercado", request_print: "Solicitar impresión" },
@@ -37,7 +37,7 @@ const resources = {
     lang: { label: "Idioma" },
   }},
   fr: { translation: {
-    nav: { marketplace: "Marché", search: "Rechercher", community: "Communauté", print: "Envoyer à imprimer", dashboard: "Tableau", wishlist: "Favoris", designs: "Mes designs", orders: "Mes commandes", signin: "Se connecter", signout: "Déconnexion" },
+    nav: { marketplace: "Accueil", search: "Rechercher", community: "Communauté", print: "Envoyer à imprimer", dashboard: "Tableau", wishlist: "Favoris", designs: "Mes designs", orders: "Mes commandes", signin: "Se connecter", signout: "Déconnexion" },
     hero: { eyebrow: "3D · IMPRESSION · MARCHÉ", title1: "Forgez votre prochaine", title2: "obsession", title3: "tridimensionnelle.", desc: "Découvrez des designs prêts à imprimer, cherchez sur tous les sites au même endroit, et envoyez-nous n'importe quel fichier.", cta_search: "Rechercher des modèles 3D", cta_send: "Envoyer un fichier" },
     market: { title: "Marché sélectionné", desc: "Designs choisis à la main — chaque modèle testé dans notre labo.", search_ph: "Rechercher…" },
     product: { back: "Retour au marché", request_print: "Demander une impression" },
@@ -46,7 +46,7 @@ const resources = {
     lang: { label: "Langue" },
   }},
   de: { translation: {
-    nav: { marketplace: "Marktplatz", search: "Suchen", community: "Community", print: "Zum Drucken senden", dashboard: "Dashboard", wishlist: "Wunschliste", designs: "Meine Designs", orders: "Meine Bestellungen", signin: "Anmelden", signout: "Abmelden" },
+    nav: { marketplace: "Startseite", search: "Suchen", community: "Community", print: "Zum Drucken senden", dashboard: "Dashboard", wishlist: "Wunschliste", designs: "Meine Designs", orders: "Meine Bestellungen", signin: "Anmelden", signout: "Abmelden" },
     hero: { eyebrow: "3D · DRUCK · MARKTPLATZ", title1: "Schmiede deine nächste", title2: "dreidimensionale", title3: "Obsession.", desc: "Entdecke druckfertige Designs, durchsuche jede große Modell-Seite an einem Ort und sende uns beliebige Dateien zum Druck.", cta_search: "3D-Modelle suchen", cta_send: "Datei senden" },
     market: { title: "Kuratierter Marktplatz", desc: "Handverlesene Designs — jedes Modell im Labor getestet.", search_ph: "Katalog durchsuchen…" },
     product: { back: "Zurück zum Marktplatz", request_print: "Druck anfordern" },
@@ -55,7 +55,7 @@ const resources = {
     lang: { label: "Sprache" },
   }},
   pt: { translation: {
-    nav: { marketplace: "Mercado", search: "Buscar", community: "Comunidade", print: "Enviar para imprimir", dashboard: "Painel", wishlist: "Favoritos", designs: "Meus designs", orders: "Meus pedidos", signin: "Entrar", signout: "Sair" },
+    nav: { marketplace: "Inicio", search: "Buscar", community: "Comunidade", print: "Enviar para imprimir", dashboard: "Painel", wishlist: "Favoritos", designs: "Meus designs", orders: "Meus pedidos", signin: "Entrar", signout: "Sair" },
     hero: { eyebrow: "3D · IMPRESSÃO · MERCADO", title1: "Forje sua próxima", title2: "obsessão", title3: "tridimensional.", desc: "Descubra designs prontos para imprimir, pesquise em todos os sites num só lugar e envie qualquer arquivo para imprimirmos.", cta_search: "Buscar modelos 3D", cta_send: "Enviar arquivo" },
     market: { title: "Mercado Curado", desc: "Designs selecionados — cada modelo testado no laboratório.", search_ph: "Buscar catálogo…" },
     product: { back: "Voltar ao mercado", request_print: "Pedir impressão" },
@@ -64,7 +64,7 @@ const resources = {
     lang: { label: "Idioma" },
   }},
   it: { translation: {
-    nav: { marketplace: "Mercato", search: "Cerca", community: "Community", print: "Invia in stampa", dashboard: "Dashboard", wishlist: "Preferiti", designs: "I miei design", orders: "I miei ordini", signin: "Accedi", signout: "Esci" },
+    nav: { marketplace: "Home", search: "Cerca", community: "Community", print: "Invia in stampa", dashboard: "Dashboard", wishlist: "Preferiti", designs: "I miei design", orders: "I miei ordini", signin: "Accedi", signout: "Esci" },
     hero: { eyebrow: "3D · STAMPA · MERCATO", title1: "Forgia la tua prossima", title2: "ossessione", title3: "tridimensionale.", desc: "Scopri design pronti da stampare, cerca in tutti i siti in un unico posto, inviaci qualsiasi file.", cta_search: "Cerca modelli 3D", cta_send: "Invia file" },
     market: { title: "Mercato Curato", desc: "Design selezionati — ogni modello testato in laboratorio.", search_ph: "Cerca…" },
     product: { back: "Torna al mercato", request_print: "Richiedi stampa" },
@@ -73,7 +73,7 @@ const resources = {
     lang: { label: "Lingua" },
   }},
   nl: { translation: {
-    nav: { marketplace: "Marktplaats", search: "Zoeken", community: "Community", print: "Print sturen", dashboard: "Dashboard", wishlist: "Verlanglijst", designs: "Mijn ontwerpen", orders: "Mijn bestellingen", signin: "Inloggen", signout: "Uitloggen" },
+    nav: { marketplace: "Home", search: "Zoeken", community: "Community", print: "Print sturen", dashboard: "Dashboard", wishlist: "Verlanglijst", designs: "Mijn ontwerpen", orders: "Mijn bestellingen", signin: "Inloggen", signout: "Uitloggen" },
     hero: { eyebrow: "3D · PRINT · MARKTPLAATS", title1: "Smeed je volgende", title2: "driedimensionale", title3: "obsessie.", desc: "Ontdek printklare ontwerpen en stuur ons elk bestand om te printen.", cta_search: "3D-modellen zoeken", cta_send: "Bestand sturen" },
     market: { title: "Curated Marketplace", desc: "Handgekozen ontwerpen — elk model in ons lab getest.", search_ph: "Catalogus zoeken…" },
     product: { back: "Terug", request_print: "Print aanvragen" },
@@ -82,7 +82,7 @@ const resources = {
     lang: { label: "Taal" },
   }},
   ja: { translation: {
-    nav: { marketplace: "マーケット", search: "検索", community: "コミュニティ", print: "印刷を依頼", dashboard: "ダッシュボード", wishlist: "ウィッシュリスト", designs: "自分のデザイン", orders: "注文", signin: "サインイン", signout: "サインアウト" },
+    nav: { marketplace: "ホーム", search: "検索", community: "コミュニティ", print: "印刷を依頼", dashboard: "ダッシュボード", wishlist: "ウィッシュリスト", designs: "自分のデザイン", orders: "注文", signin: "サインイン", signout: "サインアウト" },
     hero: { eyebrow: "3D · プリント · マーケット", title1: "次なる", title2: "立体の", title3: "情熱を鍛える。", desc: "印刷可能なデザインを発見し、あらゆる主要サイトを一括検索。ファイルを送るだけで印刷・発送します。", cta_search: "3Dモデル検索", cta_send: "ファイルを送る" },
     market: { title: "厳選マーケット", desc: "厳選されたデザイン — 全モデルをラボでテスト済み。", search_ph: "カタログ検索…" },
     product: { back: "マーケットへ戻る", request_print: "印刷を依頼" },
@@ -91,7 +91,7 @@ const resources = {
     lang: { label: "言語" },
   }},
   "zh-CN": { translation: {
-    nav: { marketplace: "商城", search: "搜索", community: "社区", print: "发送打印", dashboard: "仪表盘", wishlist: "心愿单", designs: "我的设计", orders: "我的订单", signin: "登录", signout: "退出" },
+    nav: { marketplace: "首页", search: "搜索", community: "社区", print: "发送打印", dashboard: "仪表盘", wishlist: "心愿单", designs: "我的设计", orders: "我的订单", signin: "登录", signout: "退出" },
     hero: { eyebrow: "3D · 打印 · 商城", title1: "锻造你的下一个", title2: "三维", title3: "痴迷。", desc: "发现可打印设计,一站式搜索所有 3D 模型网站,任何文件都可寄给我们打印发货。", cta_search: "搜索 3D 模型", cta_send: "发送文件" },
     market: { title: "精选商城", desc: "精心挑选的设计 — 每个模型都在我们实验室测试。", search_ph: "搜索目录…" },
     product: { back: "返回商城", request_print: "申请打印" },
@@ -100,7 +100,7 @@ const resources = {
     lang: { label: "语言" },
   }},
   ko: { translation: {
-    nav: { marketplace: "마켓", search: "검색", community: "커뮤니티", print: "인쇄 요청", dashboard: "대시보드", wishlist: "위시리스트", designs: "내 디자인", orders: "내 주문", signin: "로그인", signout: "로그아웃" },
+    nav: { marketplace: "홈", search: "검색", community: "커뮤니티", print: "인쇄 요청", dashboard: "대시보드", wishlist: "위시리스트", designs: "내 디자인", orders: "내 주문", signin: "로그인", signout: "로그아웃" },
     hero: { eyebrow: "3D · 프린트 · 마켓", title1: "다음", title2: "삼차원", title3: "집착을 만들어라.", desc: "인쇄 준비 완료 디자인 발견, 모든 사이트 통합 검색, 파일 전송 시 인쇄 후 배송.", cta_search: "3D 모델 검색", cta_send: "파일 보내기" },
     market: { title: "큐레이티드 마켓", desc: "직접 고른 디자인 — 모든 모델 랩 테스트.", search_ph: "카탈로그 검색…" },
     product: { back: "마켓으로", request_print: "인쇄 요청" },
@@ -109,7 +109,7 @@ const resources = {
     lang: { label: "언어" },
   }},
   ar: { translation: {
-    nav: { marketplace: "المتجر", search: "بحث", community: "المجتمع", print: "إرسال للطباعة", dashboard: "لوحة التحكم", wishlist: "المفضلة", designs: "تصميماتي", orders: "طلباتي", signin: "دخول", signout: "خروج" },
+    nav: { marketplace: "الرئيسية", search: "بحث", community: "المجتمع", print: "إرسال للطباعة", dashboard: "لوحة التحكم", wishlist: "المفضلة", designs: "تصميماتي", orders: "طلباتي", signin: "دخول", signout: "خروج" },
     hero: { eyebrow: "3D · طباعة · متجر", title1: "اصنع هوسك", title2: "ثلاثي الأبعاد", title3: "التالي.", desc: "اكتشف تصميمات جاهزة للطباعة، وابحث عبر جميع مواقع النماذج في مكان واحد، وأرسل أي ملف لنطبعه ونشحنه.", cta_search: "ابحث عن نماذج", cta_send: "أرسل ملفاً" },
     market: { title: "متجر منسق", desc: "تصميمات مختارة يدوياً — كل نموذج مُختبَر في مختبرنا.", search_ph: "ابحث في الكتالوج…" },
     product: { back: "عودة للمتجر", request_print: "اطلب طباعة" },
@@ -118,7 +118,7 @@ const resources = {
     lang: { label: "اللغة" },
   }},
   hi: { translation: {
-    nav: { marketplace: "बाज़ार", search: "खोज", community: "समुदाय", print: "प्रिंट भेजें", dashboard: "डैशबोर्ड", wishlist: "पसंदीदा", designs: "मेरे डिज़ाइन", orders: "मेरे ऑर्डर", signin: "साइन इन", signout: "साइन आउट" },
+    nav: { marketplace: "होम", search: "खोज", community: "समुदाय", print: "प्रिंट भेजें", dashboard: "डैशबोर्ड", wishlist: "पसंदीदा", designs: "मेरे डिज़ाइन", orders: "मेरे ऑर्डर", signin: "साइन इन", signout: "साइन आउट" },
     hero: { eyebrow: "3D · प्रिंट · बाज़ार", title1: "अपना अगला", title2: "त्रि-आयामी", title3: "जुनून गढ़ें।", desc: "प्रिंट-रेडी डिज़ाइन खोजें, हर बड़ी मॉडल साइट को एक जगह खोजें, कोई भी फ़ाइल भेजें — हम प्रिंट कर के भेजेंगे।", cta_search: "3D मॉडल खोजें", cta_send: "फ़ाइल भेजें" },
     market: { title: "क्यूरेटेड बाज़ार", desc: "हस्त-चयनित डिज़ाइन — हर मॉडल हमारी लैब में परखा गया।", search_ph: "कैटलॉग खोजें…" },
     product: { back: "बाज़ार पर वापस", request_print: "प्रिंट का अनुरोध करें" },

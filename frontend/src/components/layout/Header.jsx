@@ -1,4 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus } from "lucide-react";
@@ -18,6 +19,13 @@ export default function Header({ onOpenContact, onOpenChat }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [query, setQuery] = useState("");
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    navigate(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
+  };
 
   const linkCls = ({ isActive }) =>
     `text-sm font-medium transition-colors ${isActive ? "text-forge-primary" : "text-forge-text/80 hover:text-forge-text"}`;
@@ -42,11 +50,9 @@ export default function Header({ onOpenContact, onOpenChat }) {
             <Upload className="w-4 h-4 sm:mr-2"/> <span className="hidden sm:inline">Upload</span>
           </Button>
         </Link>
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-5 lg:gap-6">
           <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
-          <NavLink to="/search" className={linkCls} data-testid="nav-search">{t("nav.search")}</NavLink>
           <NavLink to="/community" className={linkCls} data-testid="nav-community">{t("nav.community")}</NavLink>
-          <NavLink to="/print" className={linkCls} data-testid="nav-print">{t("nav.print")}</NavLink>
           <button
             onClick={() => onOpenContact?.()}
             className="text-sm font-medium text-forge-text/80 hover:text-forge-text transition-colors"
@@ -55,16 +61,23 @@ export default function Header({ onOpenContact, onOpenChat }) {
             Contact
           </button>
         </nav>
+
+        {/* Inline search — desktop */}
+        <form onSubmit={submitSearch} className="hidden md:flex flex-1 max-w-xs" data-testid="header-search-form">
+          <div className="relative w-full">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-forge-muted pointer-events-none"/>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search 3D models…"
+              className="w-full bg-forge-elevated border border-forge-border rounded-full pl-9 pr-3 py-1.5 text-sm text-forge-text placeholder:text-forge-faint focus:outline-none focus:border-forge-primary transition"
+              data-testid="header-search-input"
+            />
+          </div>
+        </form>
         <div className="flex items-center gap-1 sm:gap-2">
           <div className="hidden sm:block"><LanguageSwitcher compact/></div>
-          <Button
-            variant="ghost" size="sm"
-            className="text-forge-muted hover:text-forge-text hidden md:inline-flex"
-            onClick={() => navigate("/search")}
-            data-testid="header-search-btn"
-          >
-            <Search className="w-4 h-4"/>
-          </Button>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -109,36 +122,49 @@ export default function Header({ onOpenContact, onOpenChat }) {
           )}
         </div>
       </div>
-      {/* Compact mobile nav strip */}
-      <nav className="md:hidden border-t border-forge-border overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1 px-3 py-2 min-w-max">
-          {[
-            { to: "/",          key: "marketplace" },
-            { to: "/search",    key: "search" },
-            { to: "/community", key: "community" },
-            { to: "/print",     key: "print" },
-          ].map(item => (
-            <NavLink
-              key={item.key}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                `whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition ${isActive ? "bg-forge-primary text-forge-bg" : "text-forge-muted hover:text-forge-text"}`
-              }
-              data-testid={`mnav-${item.key}`}
+      {/* Compact mobile nav strip + search */}
+      <div className="md:hidden border-t border-forge-border">
+        <form onSubmit={submitSearch} className="px-3 pt-2" data-testid="header-search-form-mobile">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-forge-muted pointer-events-none"/>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search 3D models…"
+              className="w-full bg-forge-elevated border border-forge-border rounded-full pl-9 pr-3 py-1.5 text-sm text-forge-text placeholder:text-forge-faint focus:outline-none focus:border-forge-primary"
+              data-testid="header-search-input-mobile"
+            />
+          </div>
+        </form>
+        <nav className="overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1 px-3 py-2 min-w-max">
+            {[
+              { to: "/",          key: "marketplace" },
+              { to: "/community", key: "community" },
+            ].map(item => (
+              <NavLink
+                key={item.key}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  `whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition ${isActive ? "bg-forge-primary text-forge-bg" : "text-forge-muted hover:text-forge-text"}`
+                }
+                data-testid={`mnav-${item.key}`}
+              >
+                {t(`nav.${item.key}`)}
+              </NavLink>
+            ))}
+            <button
+              onClick={() => onOpenContact?.()}
+              className="whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest text-forge-muted hover:text-forge-text transition"
+              data-testid="mnav-contact"
             >
-              {t(`nav.${item.key}`)}
-            </NavLink>
-          ))}
-          <button
-            onClick={() => onOpenContact?.()}
-            className="whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest text-forge-muted hover:text-forge-text transition"
-            data-testid="mnav-contact"
-          >
-            Contact
-          </button>
-        </div>
-      </nav>
+              Contact
+            </button>
+          </div>
+        </nav>
+      </div>
     </header>
   );
 }
