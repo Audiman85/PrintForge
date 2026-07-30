@@ -8,34 +8,53 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, Heart, Download, FileBox } from "lucide-react";
+import { Upload, Heart, Download, FileBox, Star } from "lucide-react";
 import { toast } from "sonner";
 import ShareButtons from "@/components/ShareButtons";
 import SupporterBadge from "@/components/SupporterBadge";
+import { loginWithReturn } from "@/lib/authRedirect";
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 function loginWithGoogle() {
-  const redirectUrl = window.location.origin + "/community";
-  window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  loginWithReturn("/community?upload=1");
 }
 
 export default function Community() {
   const [designs, setDesigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [supporterEmails, setSupporterEmails] = useState(new Set());
+  const [starredIds, setStarredIds] = useState(new Set());
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [dRes, sRes] = await Promise.all([
+      const [dRes, sRes, myRes] = await Promise.all([
         api.get("/designs"),
         api.get("/supporters/emails").catch(() => ({ data: { emails: [] } })),
+        user ? api.get("/community/starred").catch(() => ({ data: { ids: [] } })) : Promise.resolve({ data: { ids: [] } }),
       ]);
       setDesigns(dRes.data);
       setSupporterEmails(new Set((sRes.data?.emails || []).map(e => (e || "").toLowerCase())));
+      setStarredIds(new Set(myRes.data?.ids || []));
     } finally { setLoading(false); }
+  };
+
+  const toggleStar = async (id) => {
+    if (!user) { loginWithReturn(`/community#${id}`); return; }
+    const isStarred = starredIds.has(id);
+    const next = new Set(starredIds);
+    if (isStarred) next.delete(id); else next.add(id);
+    setStarredIds(next);
+    try {
+      if (isStarred) await api.delete(`/designs/${id}/star`);
+      else await api.post(`/designs/${id}/star`);
+    } catch (err) {
+      // revert on failure
+      setStarredIds(starredIds);
+      toast.error("Could not update star");
+    }
   };
   useEffect(()=>{ load(); },[]);
 
@@ -107,9 +126,20 @@ export default function Community() {
                 <p className="text-sm text-forge-muted line-clamp-2">{d.description || "No description"}</p>
                 <div className="flex flex-wrap gap-1.5">{(d.tags||[]).slice(0,3).map(t=><span key={t} className="chip text-[9px]">#{t}</span>)}</div>
                 <div className="flex items-center justify-between pt-2 border-t border-forge-border/60">
-                  <button onClick={()=>like(d.design_id)} className="flex items-center gap-1.5 text-sm text-forge-muted hover:text-forge-primary transition" data-testid={`like-${d.design_id}`}>
-                    <Heart className="w-4 h-4"/> {d.likes || 0}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button onClick={()=>like(d.design_id)} className="flex items-center gap-1.5 text-sm text-forge-muted hover:text-forge-primary transition" data-testid={`like-${d.design_id}`}>
+                      <Heart className="w-4 h-4"/> {d.likes || 0}
+                    </button>
+                    <button
+                      onClick={()=>toggleStar(d.design_id)}
+                      className={`flex items-center gap-1.5 text-sm transition ${starredIds.has(d.design_id) ? "text-forge-primary" : "text-forge-muted hover:text-forge-primary"}`}
+                      data-testid={`star-${d.design_id}`}
+                      title={starredIds.has(d.design_id) ? "Unstar" : "Star to save"}
+                    >
+                      <Star className={`w-4 h-4 ${starredIds.has(d.design_id) ? "fill-current" : ""}`}/>
+                      {starredIds.has(d.design_id) ? "Starred" : "Star"}
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     <ShareButtons
                       url={`${window.location.origin}/community#${d.design_id}`}

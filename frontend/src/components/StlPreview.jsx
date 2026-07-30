@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { ThreeMFLoader } from "three/examples/jsm/loaders/3MFLoader.js";
 import { FileBox, AlertTriangle } from "lucide-react";
 
 // Renders an uploaded 3MF/STL/OBJ file in an interactive 3D viewer.
@@ -14,8 +15,8 @@ export default function StlPreview({ file, color = "#FF6B00", height = 320 }) {
   useEffect(() => {
     if (!file || !mountRef.current) return;
     const ext = (file.name.split(".").pop() || "").toLowerCase();
-    if (!["stl", "obj"].includes(ext)) {
-      setError(`Preview supports 3MF and STL/OBJ only — you uploaded .${ext}. The file will still be printed.`);
+    if (!["stl", "obj", "3mf"].includes(ext)) {
+      setError(`Preview supports 3MF, STL and OBJ only — you uploaded .${ext}. The file will still be printed.`);
       return;
     }
     setError(null);
@@ -90,11 +91,16 @@ export default function StlPreview({ file, color = "#FF6B00", height = 320 }) {
         if (ext === "stl") {
           const geo = new STLLoader().parse(buffer);
           setup(geo);
+        } else if (ext === "3mf") {
+          const group = new ThreeMFLoader().parse(buffer);
+          const merged = new THREE.BufferGeometry();
+          group.traverse(child => { if (child.isMesh && !merged.attributes.position) merged.copy(child.geometry); });
+          if (!merged.attributes.position) throw new Error("No mesh data found in 3MF");
+          setup(merged);
         } else {
           const text = new TextDecoder("utf-8").decode(new Uint8Array(buffer));
           const obj = new OBJLoader().parse(text);
           const merged = new THREE.BufferGeometry();
-          // Take first mesh geometry for simplicity
           obj.traverse(child => { if (child.isMesh && !merged.attributes.position) merged.copy(child.geometry); });
           if (!merged.attributes.position) throw new Error("No mesh data found in OBJ");
           setup(merged);
@@ -104,7 +110,7 @@ export default function StlPreview({ file, color = "#FF6B00", height = 320 }) {
       }
     };
     reader.onerror = () => setError("Failed to read file");
-    if (ext === "stl") reader.readAsArrayBuffer(file); else reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(file);
 
     // Interaction
     const onDown = (e) => { state.dragging = true; state.auto = false; state.lastX = e.clientX; state.lastY = e.clientY; };

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import ModelPreview from "@/components/ModelPreview";
 import ProductCalculator from "@/components/ProductCalculator";
 import BulkCSVUpload from "@/components/BulkCSVUpload";
+import AnalyticsCard from "@/components/AnalyticsCard";
 
 const SHAPES = ["torusknot", "sphere", "icosahedron", "dodecahedron", "octahedron", "cone", "cylinder", "box"];
 
@@ -238,6 +239,7 @@ export default function AdminProducts() {
 
       {/* Existing products */}
       <div className="mt-12 space-y-6">
+        <AnalyticsCard/>
         <BulkCSVUpload onImported={async () => {
           try { const { data } = await api.get("/products"); setProducts(data); } catch {}
         }}/>

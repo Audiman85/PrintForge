@@ -8,11 +8,10 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { loginWithReturn } from "@/lib/authRedirect";
 
-// REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 function loginWithGoogle() {
-  const redirectUrl = window.location.origin + "/dashboard";
-  window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  loginWithReturn();
 }
 
 export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {

@@ -1929,6 +1929,121 @@ async def order_status(session_id: str):
     }
 
 
+# ------------------------- Community Wishlist (design stars) -------------------------
+@api_router.post("/designs/{design_id}/star")
+async def star_design(design_id: str, user=Depends(get_current_user)):
+    design = await db.designs.find_one({"design_id": design_id})
+    if not design:
+        raise HTTPException(404, "Design not found")
+    await db.design_stars.update_one(
+        {"user_id": user["user_id"], "design_id": design_id},
+        {"$setOnInsert": {
+            "id": str(uuid.uuid4()),
+            "user_id": user["user_id"],
+            "design_id": design_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
+    return {"starred": True, "design_id": design_id}
+
+
+@api_router.delete("/designs/{design_id}/star")
+async def unstar_design(design_id: str, user=Depends(get_current_user)):
+    await db.design_stars.delete_one({"user_id": user["user_id"], "design_id": design_id})
+    return {"starred": False, "design_id": design_id}
+
+
+@api_router.get("/community/starred")
+async def my_starred_designs(user=Depends(get_current_user)):
+    stars = await db.design_stars.find({"user_id": user["user_id"]}, {"_id": 0}).to_list(500)
+    return {"ids": [s["design_id"] for s in stars]}
+
+
+@api_router.get("/community/top")
+async def top_starred_designs(limit: int = Query(10, ge=1, le=50)):
+    pipeline = [
+        {"$group": {"_id": "$design_id", "stars": {"$sum": 1}}},
+        {"$sort": {"stars": -1}},
+        {"$limit": limit},
+    ]
+    top = [row async for row in db.design_stars.aggregate(pipeline)]
+    if not top:
+        return {"designs": []}
+    ids = [t["_id"] for t in top]
+    design_map = {}
+    async for d in db.designs.find({"design_id": {"$in": ids}}, {"_id": 0}):
+        design_map[d["design_id"]] = d
+    out = []
+    for t in top:
+        d = design_map.get(t["_id"])
+        if d:
+            d["stars"] = int(t["stars"])
+            out.append(d)
+    return {"designs": out}
+
+
+# ------------------------- Admin Analytics Console -------------------------
+@api_router.get("/admin/analytics")
+async def admin_analytics(days: int = Query(30, ge=1, le=365), user=Depends(get_current_user)):
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff_iso = cutoff.isoformat()
+
+    paid = await db.print_orders.find({"status": "paid", "paid_at": {"$gte": cutoff_iso}}, {"_id": 0}).to_list(1000)
+    order_total = sum(int(o.get("total_cents") or 0) for o in paid)
+
+    donation_cents = 0
+    donation_count = 0
+    async for d in db.payment_transactions.find({"purpose": "donation", "payment_status": "paid"}, {"_id": 0}):
+        upd = d.get("updated_at")
+        if isinstance(upd, datetime) and upd >= cutoff:
+            donation_cents += int(d.get("amount_cents") or 0)
+            donation_count += 1
+
+    top_donors = []
+    async for row in db.supporters.aggregate([
+        {"$match": {"created_at": {"$gte": cutoff}, "email": {"$ne": ""}}},
+        {"$group": {"_id": "$email", "total_cents": {"$sum": "$amount_cents"}, "count": {"$sum": 1},
+                    "name": {"$last": "$name"}, "is_anonymous": {"$last": "$is_anonymous"}}},
+        {"$sort": {"total_cents": -1}},
+        {"$limit": 5},
+    ]):
+        top_donors.append({
+            "email": row["_id"],
+            "total_cents": int(row.get("total_cents") or 0),
+            "count": int(row.get("count") or 0),
+            "name": row.get("name") or "",
+            "is_anonymous": bool(row.get("is_anonymous")),
+        })
+
+    restock_top = []
+    async for row in db.restock_subscriptions.aggregate([
+        {"$match": {"status": "active", "created_at": {"$gte": cutoff}}},
+        {"$group": {"_id": "$material", "subscribers": {"$sum": 1}}},
+        {"$sort": {"subscribers": -1}},
+        {"$limit": 5},
+    ]):
+        restock_top.append({"material": row["_id"], "subscribers": int(row.get("subscribers") or 0)})
+
+    signups = await db.users.count_documents({"created_at": {"$gte": cutoff}})
+    new_designs = await db.designs.count_documents({"created_at": {"$gte": cutoff_iso}})
+    stars_total = await db.design_stars.count_documents({"created_at": {"$gte": cutoff_iso}})
+
+    return {
+        "window_days": days,
+        "orders_paid_count": len(paid),
+        "orders_paid_cents": order_total,
+        "donations_count": donation_count,
+        "donations_cents": donation_cents,
+        "top_donors": top_donors,
+        "restock_top": restock_top,
+        "new_signups": signups,
+        "new_designs": new_designs,
+        "new_design_stars": stars_total,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 app.include_router(api_router)
 
 app.add_middleware(

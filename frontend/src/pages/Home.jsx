@@ -4,17 +4,17 @@ import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 import SupporterWall from "@/components/SupporterWall";
+import TopCommunityDesigns from "@/components/TopCommunityDesigns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight, Activity, MessageCircle, Heart, Bell, ChevronLeft, ChevronRight, Download, Wand2, LogIn, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePwa } from "@/context/PwaContext";
+import { loginWithReturn } from "@/lib/authRedirect";
 
-// REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 function loginWithGoogle() {
-  const redirectUrl = window.location.origin + "/tools";
-  window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  loginWithReturn("/tools");
 }
 
 export default function Home({ onOpenDonate }) {
@@ -345,6 +345,9 @@ export default function Home({ onOpenDonate }) {
 
       {/* SUPPORTER WALL */}
       <SupporterWall onDonate={onOpenDonate} />
+
+      {/* TOP COMMUNITY DESIGNS */}
+      <TopCommunityDesigns/>
 
       {/* FEATURE STRIP */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
