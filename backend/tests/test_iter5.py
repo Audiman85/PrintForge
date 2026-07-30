@@ -37,7 +37,8 @@ def a_product(mongo_db):
 # 1. Regression — 28 shipping carriers
 # ================================================================
 class TestShippingCarriers:
-    def test_28_carriers_returned(self):
+    def test_12_carriers_returned(self):
+        # UPDATED iter6: trimmed to exactly 12 carriers (FedEx/UPS/USPS/DHL + pickup)
         r = requests.post(f"{BASE_URL}/api/shipping/quotes", json={
             "weight_grams": 120, "items": 1, "country": "US",
             "postal_code": "94107", "signature_required": False, "insured_value": 0,
@@ -45,20 +46,18 @@ class TestShippingCarriers:
         assert r.status_code == 200
         d = r.json()
         assert "quotes" in d
-        assert len(d["quotes"]) == 28, f"Expected 28 carriers, got {len(d['quotes'])}"
+        assert len(d["quotes"]) == 12, f"Expected 12 carriers, got {len(d['quotes'])}"
 
     def test_carrier_codes_spot_check(self):
         r = requests.post(f"{BASE_URL}/api/shipping/quotes", json={
             "weight_grams": 100, "items": 1, "country": "US", "postal_code": "94107",
         }, timeout=15)
         codes = {q["carrier_code"] for q in r.json()["quotes"]}
-        # Spot-check for representatives across families
-        expected = {"usps_ground", "usps_priority", "ups_ground", "ups_next_air",
-                    "fedex_home", "fedex_overnight", "dhl_express", "amazon_shipping",
-                    "ontrac", "lasership", "purolator", "canada_post", "royal_mail",
-                    "evri_uk", "japan_post", "yamato", "aramex", "bike_courier", "eco_pickup"}
-        missing = expected - codes
-        assert not missing, f"Missing expected carriers: {missing}"
+        expected = {"usps_ground", "usps_priority", "usps_priority_exp",
+                    "ups_ground", "ups_2nd_air", "ups_next_air",
+                    "fedex_home", "fedex_2day", "fedex_overnight",
+                    "dhl_ecommerce", "dhl_express", "eco_pickup"}
+        assert codes == expected, f"Codes mismatch: {codes}"
 
     def test_carrier_shape(self):
         q = requests.post(f"{BASE_URL}/api/shipping/quotes", json={

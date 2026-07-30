@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { ExternalLink, Search, Wand2, Type, Image as ImageIcon, Puzzle, Sparkles, Frame, Coins, Stamp, Cookie, ScanLine, Layers, KeyRound, Vote, Camera, Palette, Ruler } from "lucide-react";
 
 // Curated set of MakerWorld MakerLab tools — always up to date via the direct link.
@@ -179,6 +181,7 @@ const CATEGORIES = [
 ];
 
 export default function Tools() {
+  const { user } = useAuth();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
 
@@ -192,6 +195,8 @@ export default function Tools() {
         || (t.tags || []).some(g => g.toLowerCase().includes(query)));
     });
   }, [q, cat]);
+
+  if (!user) return <Navigate to="/" replace />;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-16" data-testid="tools-page">

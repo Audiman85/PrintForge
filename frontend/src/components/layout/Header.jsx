@@ -2,7 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
-import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus, HandHeart, UserCircle2 } from "lucide-react";
+import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus, HandHeart, UserCircle2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
@@ -53,7 +53,7 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
 
         <nav className="hidden md:flex items-center gap-5 lg:gap-6">
           <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
-          <NavLink to="/tools" className={linkCls} data-testid="nav-tools">Tools</NavLink>
+          {user && <NavLink to="/tools" className={linkCls} data-testid="nav-tools">Tools</NavLink>}
           <NavLink to="/community" className={linkCls} data-testid="nav-community">{t("nav.community")}</NavLink>
           <NavLink to="/supporters" className={linkCls} data-testid="nav-supporters">Supporters</NavLink>
           <button
@@ -126,6 +126,9 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
                 <DropdownMenuItem onClick={() => navigate("/profile")} data-testid="menu-profile">
                   <UserCircle2 className="w-4 h-4 mr-2"/> My Profile
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/tools")} data-testid="menu-tools">
+                  <Wand2 className="w-4 h-4 mr-2"/> Tools (MakerLab)
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/dashboard?tab=wishlist")} data-testid="menu-wishlist">
                   <Heart className="w-4 h-4 mr-2"/> {t("nav.wishlist")}
                 </DropdownMenuItem>
@@ -165,11 +168,11 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
         <nav className="overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-1 px-3 py-1.5 min-w-max">
             {[
-              { to: "/",           key: "marketplace", label: t("nav.marketplace") },
-              { to: "/tools",      key: "tools",       label: "Tools" },
-              { to: "/community",  key: "community",   label: t("nav.community") },
-              { to: "/supporters", key: "supporters",  label: "Supporters" },
-            ].map(item => (
+              { to: "/",           key: "marketplace", label: t("nav.marketplace"), gated: false },
+              { to: "/tools",      key: "tools",       label: "Tools",              gated: true },
+              { to: "/community",  key: "community",   label: t("nav.community"),   gated: false },
+              { to: "/supporters", key: "supporters",  label: "Supporters",         gated: false },
+            ].filter(item => !item.gated || user).map(item => (
               <NavLink
                 key={item.key}
                 to={item.to}
