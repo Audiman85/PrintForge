@@ -1,0 +1,32 @@
+{
+  "summary": "Iter7 verification of (a) guest Tools sign-in bubble on Home, (b) bubble hides when authed, (c) /tools auth-hydration race fix, (d) mobile 390 layout, and (e) iter6 backend regression. ALL 5 REQUESTED FEATURES PASS. (1) GUEST BUBBLE — Fresh unauthed visit to Home renders data-testid='tools-signin-bubble' + wrap between hero and marketplace. Heading contains 'AI generation tools'. tools-signin-preview contains all 6 required chips (Photo → 3D, Make My Sign, Lithophane, Pixel Puzzle, Image → Keychain, Make My Statue — visually uppercased by CSS but case-insensitive text match confirms). Both CTAs (tools-signin-cta, tools-register-cta) navigate to https://auth.emergentagent.com/oauth/?redirect=<origin>/dashboard — verified by intercepting navigation. (2) AUTHED HIDE — Seeded session cookie; reloaded Home; tools-signin-bubble count=0, hero-section still renders, nav-tools count=1 confirming auth actually took effect, no fatal console errors related to this feature (only benign React img src='' warnings and 401 restock-subscriptions which is pre-existing/unrelated). (3) TOOLS RACE — Cold direct goto('/tools') with session cookie: data-testid='tools-loading' spinner observed on initial render, then data-testid='tools-page' renders and URL stays at /tools. NO redirect to /. (4) UNAUTHED /tools — Cold-load without cookie: correctly redirects to '/' and shows the guest bubble. Redirect branch NOT regressed by the loading gate. (5) MOBILE @390 — Bubble visible, scrollWidth==clientWidth==390 (no horizontal scroll), signin-cta bbox rightEdge=353, register-cta rightEdge=353, both fit within 390-viewport. (6) BACKEND REGRESSION — Ran the iter6 regression suite (test_iter5.py, test_iter6.py, test_restock.py, test_supporter_emails.py, test_bulk.py): 49/49 PASSED in 54.96s, matching iter6 baseline. No backend endpoints changed this iteration.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home (all pages)", "issues": ["Benign but noisy: multiple React 'An empty string (\"\") was passed to the src attribute' warnings — likely a ProductCard/img with an empty src prop. Not related to this iteration but should be cleaned up (pass null or omit)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter6.py",
+    "/app/backend/tests/test_iter5.py",
+    "/app/test_reports/pytest/iter7_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Home.jsx loginWithGoogle hard-codes redirect to '/dashboard'. If a guest clicks the bubble to unlock Tools, better UX would be to redirect back to '/tools' after auth so the user lands on what they were trying to access. Consider: redirect = window.location.origin + '/tools'.",
+    "Tools.jsx now correctly renders data-testid='tools-loading' while AuthContext hydrates and only Navigates home after loading is false — fixes the iter6 race. Clean, minimal change.",
+    "AuthContext already exposed `loading` so no context change needed — good.",
+    "The bubble section uses noise-panel + blurred blobs — good visual weight, but the CSS classes `.chip` text is uppercased by design system; testing agents / a11y consumers should not rely on literal-cased text. Fine for now.",
+    "Pre-existing: several <img src=''> warnings still flooding the console. Investigate ProductCard image fallback."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (49/49 regression)", "frontend": "100% (5/5 requested checks)"},
+  "test_credentials": "Ephemeral session_token=test_session_iter7_1785440998388 (created + cleaned up post-test).",
+  "seed_data_creation": "1 user + 1 session in mongo test_database; both deleted at end of run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All three fixes verified end-to-end. If retesting, seed a session per /app/auth_testing.md, set cookie name='session_token' domain='design-forge-520.preview.emergentagent.com'. The unauthed /tools branch is still guarded (redirects home), so both branches of the fix are safe. Only outstanding advisory (non-blocking): loginWithGoogle redirects to /dashboard even when the CTA is on the Tools promo bubble — user would land on /dashboard rather than /tools post-auth. And the pre-existing empty-src <img> console warnings should eventually be addressed.",
+  "rca of the issue": "N/A — this was a bug-verification pass. All three fixes (guest bubble, auth-gated hide, tools loading gate) work as designed."
+}

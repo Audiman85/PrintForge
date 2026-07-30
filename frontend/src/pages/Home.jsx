@@ -7,9 +7,15 @@ import SupporterWall from "@/components/SupporterWall";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight, Activity, MessageCircle, Heart, Bell, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight, Activity, MessageCircle, Heart, Bell, ChevronLeft, ChevronRight, Download, Wand2, LogIn, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePwa } from "@/context/PwaContext";
+
+// REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+function loginWithGoogle() {
+  const redirectUrl = window.location.origin + "/dashboard";
+  window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+}
 
 export default function Home({ onOpenDonate }) {
   const [products, setProducts] = useState([]);
@@ -116,6 +122,61 @@ export default function Home({ onOpenDonate }) {
           </div>
         </div>
       </section>
+
+      {/* SIGN-IN GATE — Tools bubble (guests only) */}
+      {!user && (
+        <section
+          className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 sm:pt-6"
+          data-testid="tools-signin-bubble-wrap"
+        >
+          <div
+            className="relative overflow-hidden rounded-2xl border border-forge-primary/30 bg-forge-surface p-5 sm:p-7 noise-panel"
+            data-testid="tools-signin-bubble"
+          >
+            <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full bg-forge-primary/25 blur-3xl pointer-events-none"/>
+            <div className="absolute -bottom-16 -left-10 w-56 h-56 rounded-full bg-forge-tech/15 blur-3xl pointer-events-none"/>
+            <div className="relative flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl border border-forge-primary/40 bg-forge-primary/15 flex items-center justify-center">
+                <Wand2 className="w-6 h-6 sm:w-7 sm:h-7 text-forge-primary"/>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="chip chip-tech text-[9px] sm:text-[10px]"><Lock className="w-2.5 h-2.5"/> Members only</span>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">AI · MakerLab</span>
+                </div>
+                <h3 className="font-display text-forge-text text-xl sm:text-2xl lg:text-3xl leading-tight">
+                  Unlock the <span className="text-forge-primary">AI generation tools</span>.
+                </h3>
+                <p className="text-forge-muted text-xs sm:text-sm mt-2 max-w-2xl">
+                  Sign in for free to open the Tools tab — turn photos into 3D reliefs, generate signs, vases, lithophanes, statues and more with MakerLab's AI generators.
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-3" data-testid="tools-signin-preview">
+                  {["Photo → 3D", "Make My Sign", "Lithophane", "Pixel Puzzle", "Image → Keychain", "Make My Statue"].map((tag) => (
+                    <span key={tag} className="chip text-[9px] sm:text-[10px]">{tag}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0">
+                <Button
+                  onClick={loginWithGoogle}
+                  className="btn-forge rounded-full px-5 py-5 text-sm"
+                  data-testid="tools-signin-cta"
+                >
+                  <LogIn className="w-4 h-4 mr-2"/> Sign in to unlock
+                </Button>
+                <Button
+                  onClick={loginWithGoogle}
+                  variant="outline"
+                  className="rounded-full px-5 py-5 text-sm border-forge-border bg-transparent text-forge-text hover:bg-forge-elevated hover:text-forge-text"
+                  data-testid="tools-register-cta"
+                >
+                  Create account <ArrowRight className="w-4 h-4 ml-2"/>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* MARKETPLACE */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14" id="marketplace">

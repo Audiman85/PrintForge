@@ -181,7 +181,7 @@ const CATEGORIES = [
 ];
 
 export default function Tools() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
 
@@ -196,6 +196,13 @@ export default function Tools() {
     });
   }, [q, cat]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center" data-testid="tools-loading">
+        <div className="w-6 h-6 rounded-full border-2 border-forge-border border-t-forge-primary animate-spin"/>
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/" replace />;
 
   return (
