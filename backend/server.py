@@ -368,7 +368,108 @@ async def make_quote(payload: QuoteRequest):
         infill_pct=payload.infill_pct,
     )
     q["product_id"] = payload.product_id
+    q["shipping_included"] = True
+    q["shipping_carrier"] = "Standard (Economy)"
     return q
+
+# ------------------------- Shipping quotes -------------------------
+CARRIERS = [
+    {"code": "usps_ground",       "name": "USPS Ground Advantage",   "flag_emoji": "USPS",   "days_min": 3,  "days_max": 5,  "base": 5.99,  "per_kg": 1.90, "per_extra_item": 0.50, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 460, "logo_bg": "#004B87", "note": "Best value for small parcels within US"},
+    {"code": "ups_ground",        "name": "UPS Ground",              "flag_emoji": "UPS",    "days_min": 3,  "days_max": 5,  "base": 8.50,  "per_kg": 2.40, "per_extra_item": 0.75, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 520, "logo_bg": "#5B3A1F", "note": "Reliable business ground"},
+    {"code": "fedex_home",        "name": "FedEx Home Delivery",     "flag_emoji": "FDX",    "days_min": 2,  "days_max": 5,  "base": 9.20,  "per_kg": 2.60, "per_extra_item": 0.80, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 500, "logo_bg": "#4D148C", "note": "Includes Saturday delivery"},
+    {"code": "fedex_2day",        "name": "FedEx 2Day",              "flag_emoji": "FDX",    "days_min": 2,  "days_max": 2,  "base": 16.00, "per_kg": 4.50, "per_extra_item": 1.20, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 780, "logo_bg": "#4D148C", "note": "Guaranteed 2 business days"},
+    {"code": "ups_2nd_air",       "name": "UPS 2nd Day Air",         "flag_emoji": "UPS",    "days_min": 2,  "days_max": 2,  "base": 15.50, "per_kg": 4.30, "per_extra_item": 1.20, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 760, "logo_bg": "#5B3A1F", "note": "Business day count"},
+    {"code": "usps_priority",     "name": "USPS Priority Mail",      "flag_emoji": "USPS",   "days_min": 1,  "days_max": 3,  "base": 9.90,  "per_kg": 2.90, "per_extra_item": 0.70, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 470, "logo_bg": "#004B87", "note": "Free tracking + insurance"},
+    {"code": "fedex_overnight",   "name": "FedEx Overnight",         "flag_emoji": "FDX",    "days_min": 1,  "days_max": 1,  "base": 32.00, "per_kg": 8.20, "per_extra_item": 1.80, "tracked": True,  "insured_up_to": 1000, "carbon_g_per_kg": 1400,"logo_bg": "#4D148C", "note": "AM/PM slots"},
+    {"code": "ups_next_air",      "name": "UPS Next Day Air Saver",  "flag_emoji": "UPS",    "days_min": 1,  "days_max": 1,  "base": 28.00, "per_kg": 7.80, "per_extra_item": 1.80, "tracked": True,  "insured_up_to": 1000, "carbon_g_per_kg": 1350,"logo_bg": "#5B3A1F", "note": "End-of-day next business day"},
+    {"code": "dhl_express",       "name": "DHL Express International","flag_emoji": "DHL",   "days_min": 2,  "days_max": 5,  "base": 22.00, "per_kg": 6.10, "per_extra_item": 1.50, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 900, "logo_bg": "#D40511", "note": "Best for international"},
+    {"code": "local_courier",     "name": "Local Courier",           "flag_emoji": "LC",     "days_min": 0,  "days_max": 1,  "base": 12.00, "per_kg": 1.50, "per_extra_item": 0.30, "tracked": True,  "insured_up_to": 300,  "carbon_g_per_kg": 200, "logo_bg": "#FF6B00", "note": "Same-day within metro area"},
+    {"code": "eco_pickup",        "name": "Store Pickup",            "flag_emoji": "PU",     "days_min": 0,  "days_max": 1,  "base": 0.00,  "per_kg": 0.00, "per_extra_item": 0.00, "tracked": False, "insured_up_to": 0,    "carbon_g_per_kg": 0,   "logo_bg": "#22C55E", "note": "Pick up from the maker lab — free"},
+]
+
+# Simple destination zone table (US-centric heuristic based on postal prefix)
+def _destination_zone(country: str, postal: str) -> tuple:
+    country = (country or "US").upper()
+    if country not in ("US", "USA", "CA", "MX"):
+        return ("international", 2.4)
+    # very rough US zones by first digit of ZIP
+    if country in ("US", "USA") and postal and postal[:1].isdigit():
+        first = int(postal[:1])
+        if first <= 1: return ("northeast", 1.0)
+        if first <= 3: return ("southeast", 1.05)
+        if first <= 5: return ("midwest", 1.1)
+        if first <= 7: return ("south", 1.15)
+        if first <= 8: return ("mountain", 1.25)
+        return ("west", 1.35)
+    if country == "CA": return ("canada", 1.6)
+    if country == "MX": return ("mexico", 1.55)
+    return ("domestic", 1.15)
+
+class ShippingQuoteRequest(BaseModel):
+    weight_grams: float = 100.0
+    items: int = 1
+    country: str = "US"
+    postal_code: str = ""
+    signature_required: bool = False
+    insured_value: float = 0.0    # USD, adds insurance surcharge if > carrier base
+
+def _price_carrier(c: dict, weight_kg: float, items: int, zone_mult: float, signature: bool, insured_value: float) -> dict:
+    base = c["base"] * zone_mult
+    variable = c["per_kg"] * weight_kg * zone_mult
+    extra_items = max(0, items - 1) * c["per_extra_item"]
+    signature_fee = 3.50 if signature and c["tracked"] else 0.0
+    insurance_fee = 0.0
+    if insured_value > c["insured_up_to"] and c["tracked"]:
+        insurance_fee = 0.85 + (insured_value - c["insured_up_to"]) * 0.015
+    subtotal = base + variable + extra_items + signature_fee + insurance_fee
+    if c["code"] == "eco_pickup":
+        subtotal = 0.0
+    total = _round(subtotal)
+    return {
+        "carrier_code": c["code"],
+        "carrier_name": c["name"],
+        "logo_label": c["flag_emoji"],
+        "logo_bg": c["logo_bg"],
+        "days_min": c["days_min"],
+        "days_max": c["days_max"],
+        "tracked": c["tracked"],
+        "insured_up_to": c["insured_up_to"],
+        "carbon_g": int(c["carbon_g_per_kg"] * weight_kg),
+        "note": c["note"],
+        "breakdown": {
+            "base": _round(base),
+            "weight": _round(variable),
+            "extra_items": _round(extra_items),
+            "signature": _round(signature_fee),
+            "insurance": _round(insurance_fee),
+        },
+        "price": total,
+    }
+
+@api_router.post("/shipping/quotes")
+async def shipping_quotes(payload: ShippingQuoteRequest):
+    weight_kg = max(0.01, float(payload.weight_grams) / 1000.0)
+    items = max(1, int(payload.items))
+    zone, zone_mult = _destination_zone(payload.country, payload.postal_code)
+    quotes = [_price_carrier(c, weight_kg, items, zone_mult, payload.signature_required, float(payload.insured_value)) for c in CARRIERS]
+    quotes.sort(key=lambda q: (q["price"], q["days_min"]))
+    return {
+        "destination_zone": zone,
+        "weight_grams": payload.weight_grams,
+        "items": items,
+        "country": payload.country.upper(),
+        "postal_code": payload.postal_code,
+        "cheapest_code": quotes[0]["carrier_code"],
+        "fastest_code": min(quotes, key=lambda q: q["days_max"])["carrier_code"],
+        "quotes": quotes,
+    }
+
+@api_router.get("/shipping/carriers")
+async def shipping_carriers():
+    return {"carriers": [
+        {"code": c["code"], "name": c["name"], "days_min": c["days_min"], "days_max": c["days_max"], "logo_label": c["flag_emoji"], "logo_bg": c["logo_bg"]}
+        for c in CARRIERS
+    ]}
 
 # ------------------------- External search (aggregated) -------------------------
 SEARCH_SITES = [
