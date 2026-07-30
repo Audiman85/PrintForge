@@ -29,7 +29,7 @@ export default function Footer({ onOpenContact }) {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-forge-tech font-mono mb-3">Formats</h4>
           <div className="flex flex-wrap gap-2">
-            <span className="chip">STL</span><span className="chip">OBJ</span><span className="chip">3MF</span><span className="chip">STEP</span>
+            <span className="chip">3MF</span><span className="chip">STL</span><span className="chip">OBJ</span><span className="chip">STEP</span>
           </div>
         </div>
       </div>

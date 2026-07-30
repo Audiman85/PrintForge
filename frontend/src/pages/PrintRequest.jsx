@@ -40,7 +40,7 @@ export default function PrintRequest() {
   };
   const validateAndSet = (f) => {
     const ext = f.name.split(".").pop().toLowerCase();
-    if (!["stl","obj","3mf","step","stp","zip"].includes(ext)) { toast.error("Only STL/OBJ/3MF/STEP/ZIP files"); return; }
+    if (!["3mf","stl","obj","step","stp","zip"].includes(ext)) { toast.error("Only 3MF/STL/OBJ/STEP/ZIP files"); return; }
     if (f.size > 60*1024*1024) { toast.error("Max 60MB"); return; }
     setFile(f);
   };
@@ -83,7 +83,7 @@ export default function PrintRequest() {
     <div className="max-w-5xl mx-auto px-6 py-14">
       <div className="scanline w-16 mb-3"/>
       <h1 className="font-display font-semibold text-forge-text text-4xl sm:text-5xl">Send us a file to print</h1>
-      <p className="text-forge-muted mt-3 max-w-2xl">Upload your STL / OBJ / 3MF file, pick a material and colour, and we'll print & ship it. No account needed to submit, but signing in lets you track orders.</p>
+      <p className="text-forge-muted mt-3 max-w-2xl">Upload your 3MF / STL / OBJ file, pick a material and colour, and we'll print & ship it. No account needed to submit, but signing in lets you track orders.</p>
 
       <form onSubmit={submit} className="mt-10 grid lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3 space-y-4">
@@ -98,10 +98,10 @@ export default function PrintRequest() {
               <>
                 <UploadCloud className="w-10 h-10 text-forge-primary mb-4"/>
                 <p className="font-display text-xl text-forge-text mb-1">Drop your 3D file here</p>
-                <p className="text-sm text-forge-muted mb-4">STL · OBJ · 3MF · STEP · ZIP · up to 60MB</p>
+                <p className="text-sm text-forge-muted mb-4">3MF · STL · OBJ · STEP · ZIP · up to 60MB</p>
                 <label className="btn-forge rounded-full px-5 py-2 cursor-pointer">
                   Choose file
-                  <input type="file" className="hidden" onChange={(e)=>e.target.files?.[0] && validateAndSet(e.target.files[0])} data-testid="file-input"/>
+                  <input type="file" accept=".3mf,.stl,.obj,.step,.stp,.zip" className="hidden" onChange={(e)=>e.target.files?.[0] && validateAndSet(e.target.files[0])} data-testid="file-input"/>
                 </label>
               </>
             ) : (

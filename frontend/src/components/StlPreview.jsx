@@ -4,8 +4,8 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { FileBox, AlertTriangle } from "lucide-react";
 
-// Renders an uploaded STL/OBJ file in an interactive 3D viewer.
-// Falls back to a friendly message for 3MF/STEP/ZIP (unsupported client-side).
+// Renders an uploaded 3MF/STL/OBJ file in an interactive 3D viewer.
+// Falls back to a friendly message for STEP/ZIP (unsupported client-side).
 export default function StlPreview({ file, color = "#FF6B00", height = 320 }) {
   const mountRef = useRef(null);
   const [stats, setStats] = useState(null);
@@ -15,7 +15,7 @@ export default function StlPreview({ file, color = "#FF6B00", height = 320 }) {
     if (!file || !mountRef.current) return;
     const ext = (file.name.split(".").pop() || "").toLowerCase();
     if (!["stl", "obj"].includes(ext)) {
-      setError(`Preview supports STL and OBJ only — you uploaded .${ext}. The file will still be printed.`);
+      setError(`Preview supports 3MF and STL/OBJ only — you uploaded .${ext}. The file will still be printed.`);
       return;
     }
     setError(null);

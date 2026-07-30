@@ -173,8 +173,8 @@ function UploadDialog({ onDone }) {
           <Input value={form.tags} onChange={(e)=>setForm({...form,tags:e.target.value})} placeholder="fantasy, dragon, flexi" className="bg-forge-elevated border-forge-border text-forge-text mt-2" data-testid="design-tags-input"/>
         </div>
         <div>
-          <Label>Model file (STL/OBJ/3MF, max 60MB)</Label>
-          <Input type="file" accept=".stl,.obj,.3mf,.step,.stp,.zip" onChange={(e)=>setModel(e.target.files?.[0])} className="bg-forge-elevated border-forge-border text-forge-text mt-2 file:text-forge-primary" required data-testid="design-model-input"/>
+          <Label>Model file (3MF/STL/OBJ, max 60MB)</Label>
+          <Input type="file" accept=".3mf,.stl,.obj,.step,.stp,.zip" onChange={(e)=>setModel(e.target.files?.[0])} className="bg-forge-elevated border-forge-border text-forge-text mt-2 file:text-forge-primary" required data-testid="design-model-input"/>
         </div>
         <div>
           <Label>Preview image (optional)</Label>

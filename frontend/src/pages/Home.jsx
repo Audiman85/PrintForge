@@ -351,7 +351,7 @@ export default function Home({ onOpenDonate }) {
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {[
             {icon:Search, title:"Search Everywhere", desc:"Cross-search Thingiverse, Printables, Cults3D & more in one command palette.", to:"/search", cta:"Open search"},
-            {icon:Rocket, title:"Send Us A File", desc:"Upload STL/OBJ/3MF — we'll print in your material and colour, then ship.", to:"/print", cta:"Send to print"},
+            {icon:Rocket, title:"Send Us A File", desc:"Upload 3MF/STL/OBJ — we'll print in your material and colour, then ship.", to:"/print", cta:"Send to print"},
             {icon:Sparkles, title:"Share Your Design", desc:"Upload your own creations, get community likes, download counts and feedback.", to:"/community", cta:"Community"},
           ].map(({icon:Icon,title,desc,to,cta},k)=>(
             <Link key={k} to={to} className="card-forge p-6 relative noise-panel group">
