@@ -211,7 +211,7 @@ export default function Tools() {
         <div className="scanline w-12"/>
         <span className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.2em] text-forge-tech">MakerLab · Tools</span>
       </div>
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
           <h1 className="font-display font-semibold text-forge-text text-3xl sm:text-4xl lg:text-5xl leading-tight">
             Design with <span className="text-forge-primary">MakerLab</span>.
@@ -230,6 +230,56 @@ export default function Tools() {
           <ExternalLink className="w-4 h-4"/> Open MakerLab
         </a>
       </div>
+
+      {/* MakerWorld attribution + community link */}
+      <a
+        href="https://makerworld.com"
+        target="_blank"
+        rel="noreferrer"
+        data-testid="makerworld-attribution"
+        className="mb-8 flex items-center gap-3 sm:gap-4 rounded-2xl border border-forge-border bg-forge-surface p-4 sm:p-5 hover:border-forge-primary/60 transition group"
+      >
+        <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-xl bg-white flex items-center justify-center overflow-hidden">
+          <svg viewBox="0 0 64 64" className="w-9 h-9 sm:w-10 sm:h-10" aria-hidden="true">
+            {/* Simplified MakerWorld hex mark — stylised M inside a hex */}
+            <defs>
+              <linearGradient id="mw-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"  stopColor="#00AE42"/>
+                <stop offset="100%" stopColor="#008C34"/>
+              </linearGradient>
+            </defs>
+            <polygon
+              points="32,4 58,18 58,46 32,60 6,46 6,18"
+              fill="url(#mw-grad)"
+              stroke="#005E22"
+              strokeWidth="2"
+            />
+            <path
+              d="M18 44 V22 L28 34 L32 30 L36 34 L46 22 V44"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+            <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-widest text-forge-tech">Official partner</span>
+            <span className="chip chip-tech text-[9px]">MakerWorld</span>
+          </div>
+          <div className="font-display text-forge-text text-base sm:text-lg leading-tight truncate">
+            Tools + resources by <span className="text-forge-primary">MakerWorld</span>
+          </div>
+          <p className="text-forge-muted text-xs mt-0.5 line-clamp-2">
+            Every generator below is powered by MakerWorld's community. Visit the official site for the full tool catalog, contests, and community models.
+          </p>
+        </div>
+        <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-widest text-forge-tech shrink-0 group-hover:text-forge-primary transition">
+          Visit <ExternalLink className="w-3 h-3"/>
+        </span>
+      </a>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">

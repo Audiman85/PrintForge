@@ -1,0 +1,28 @@
+{
+  "summary": "Iter8 polish-pass verification of 3 small UX fixes. ALL 3 REQUESTED FRONTEND CHECKS PASS; backend regression skipped by agreement (no backend files touched this iter). (1) SHIPPING 'USA' — On /product/prod_babd907a2e at 390x844 mobile: opened shipping-quotes -> shipping-toggle -> shipping-country. First option renders text 'USA' (not 'United States'). After selection the SelectValue trigger reads 'USA'. Intercepted POST /api/shipping/quotes payload confirms country='US' (code preserved, only display label changed). All 10 country options load. (2) MAKERWORLD ATTRIBUTION ON /tools — Authed cold-load renders data-testid='makerworld-attribution' as <a href='https://makerworld.com' target='_blank'>. Inline SVG hex logo renders (2 svg descendants: hex logo + external-link icon). Text contains 'MakerWorld' 3 times (title + chip + inline). Positioning verified via bounding rects: hero_top=162 < mw_top=290 < search_top=435 — the card sits between hero and the search/category tabs as required. Unauthed cold-load of /tools still correctly redirects to '/' and the attribution card is NOT visible unauthed. (3) LOGIN REDIRECT FIX — Intercepted click navigation on Home data-testid='tools-signin-cta' AND 'tools-register-cta': both build URL 'https://auth.emergentagent.com/?redirect=https%3A%2F%2Fdesign-forge-520.preview.emergentagent.com%2Ftools' (URL-decoded: origin+/tools). Fix confirmed — post-auth users now land on /tools, not /dashboard. (4) BACKEND REGRESSION — SKIPPED per review_request instruction ('49/49 known green, no backend endpoints changed this iteration'). No backend files were modified in this iter (only 3 frontend files: ShippingQuotes.jsx, Tools.jsx, Home.jsx).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_8.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ShippingQuotes.jsx COUNTRIES[0].name='USA' is a purely presentational change; underlying code 'US' preserved so backend contract unaffected. Clean.",
+    "Tools.jsx new makerworld-attribution anchor: uses inline SVG (no external asset dep -> no broken img risk), proper rel='noreferrer' with target='_blank' (security-safe). Sits in correct DOM position between hero and search.",
+    "Home.jsx loginWithGoogle now redirects to origin+'/tools' — resolves the iter7 advisory. Note this affects ALL callers of loginWithGoogle (both Tools-bubble CTAs). If any other CTA (e.g., generic navbar login) reuses this helper, users will always land on /tools regardless of intent. Consider parameterising: loginWithGoogle(nextPath='/tools').",
+    "Pre-existing (from iter7, not this iter): benign React '<img src=\"\">' console warnings still present in ProductCard-related components. Not fixed here, not blocking.",
+    "Iter8 code diff is minimal and focused — good polish pass."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped, no changes)", "frontend": "100% (3/3 requested checks)"},
+  "test_credentials": "Ephemeral session_token=test_session_iter8_1785441260580 (seeded + cleaned up post-test).",
+  "seed_data_creation": "1 user + 1 session in mongo test_database; both deleted at end of run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All three iter8 polish fixes verified end-to-end. Seed a session per /app/auth_testing.md if retesting /tools attribution. For shipping test, product IDs are dynamic — fetch via GET /api/products first. The unauthed /tools redirect branch is unchanged and still guarded. Only outstanding advisory: loginWithGoogle now hardcodes /tools redirect for ALL callers — consider parameterising if other login entry-points are added.",
+  "rca of the issue": "N/A — polish/verification pass, no bugs found."
+}

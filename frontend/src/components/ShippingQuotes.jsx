@@ -6,7 +6,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Truck, ChevronDown, ChevronUp, Check, MapPin } from "lucide-react";
 
 const COUNTRIES = [
-  { code: "US", name: "United States" },
+  { code: "US", name: "USA" },
   { code: "CA", name: "Canada" },
   { code: "MX", name: "Mexico" },
   { code: "GB", name: "United Kingdom" },
