@@ -2,7 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
-import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus, HandHeart } from "lucide-react";
+import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus, HandHeart, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
@@ -121,6 +121,9 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
               <DropdownMenuContent align="end" className="w-56 bg-forge-surface border-forge-border text-forge-text">
                 <DropdownMenuItem onClick={() => navigate("/dashboard")} data-testid="menu-dashboard">
                   <LayoutGrid className="w-4 h-4 mr-2"/> {t("nav.dashboard")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/profile")} data-testid="menu-profile">
+                  <UserCircle2 className="w-4 h-4 mr-2"/> My Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/dashboard?tab=wishlist")} data-testid="menu-wishlist">
                   <Heart className="w-4 h-4 mr-2"/> {t("nav.wishlist")}

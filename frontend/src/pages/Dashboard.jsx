@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useSearchParams, Link, useNavigate, Navigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ProductCard";
@@ -61,7 +61,6 @@ export default function Dashboard() {
           <TabsTrigger value="wishlist" data-testid="tab-wishlist" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">Wishlist</TabsTrigger>
           <TabsTrigger value="orders" data-testid="tab-orders" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">Orders</TabsTrigger>
           <TabsTrigger value="designs" data-testid="tab-designs" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">My Designs</TabsTrigger>
-          <TabsTrigger value="profile" data-testid="tab-profile" className="data-[state=active]:bg-forge-primary data-[state=active]:text-forge-bg">Profile</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-8">
@@ -144,10 +143,12 @@ export default function Dashboard() {
           )}
         </TabsContent>
 
-        <TabsContent value="profile" className="mt-8">
+        <TabsContent value="profile" className="mt-8" hidden>
           <SocialsProfile user={user}/>
         </TabsContent>
       </Tabs>
+
+      {tab === "profile" && <Navigate to="/profile" replace />}
     </div>
   );
 }

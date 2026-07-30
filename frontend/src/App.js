@@ -20,6 +20,7 @@ import AdminProducts from "@/pages/AdminProducts";
 import DonateSuccess from "@/pages/DonateSuccess";
 import DonateCancel from "@/pages/DonateCancel";
 import Supporters from "@/pages/Supporters";
+import Profile from "@/pages/Profile";
 import "@/i18n";
 
 function AppRouter() {
@@ -45,6 +46,7 @@ function AppRouter() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/supporters" element={<Supporters onOpenDonate={() => setDonateOpen(true)} />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/donate/success" element={<DonateSuccess />} />
           <Route path="/donate/cancel" element={<DonateCancel />} />
         </Routes>
