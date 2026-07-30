@@ -24,15 +24,15 @@ export default function Header({ onOpenContact, onOpenChat }) {
 
   return (
     <header className="sticky top-0 z-40 glass border-b border-forge-border">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
-        <Link to="/" data-testid="logo-link" className="flex items-center gap-2 group">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-6">
+        <Link to="/" data-testid="logo-link" className="flex items-center gap-2 group shrink-0">
           <div className="w-9 h-9 rounded-md bg-forge-primary flex items-center justify-center relative">
             <div className="absolute inset-0 rounded-md animate-forge-pulse" />
             <span className="font-display font-bold text-forge-bg text-lg">P</span>
           </div>
-          <div className="flex flex-col leading-none">
-            <span className="font-display font-semibold text-forge-text text-lg">PrintForge</span>
-            <span className="font-mono text-[9px] tracking-[0.2em] text-forge-tech uppercase">3D · MARKETPLACE</span>
+          <div className="hidden xs:flex sm:flex flex-col leading-none">
+            <span className="font-display font-semibold text-forge-text text-base sm:text-lg">PrintForge</span>
+            <span className="font-mono text-[9px] tracking-[0.2em] text-forge-tech uppercase hidden sm:inline">3D · MARKETPLACE</span>
           </div>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
@@ -48,13 +48,13 @@ export default function Header({ onOpenContact, onOpenChat }) {
             Contact
           </button>
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Link to="/print" data-testid="header-upload-btn">
-            <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech">
-              <Upload className="w-4 h-4 mr-2"/> <span className="hidden sm:inline">Upload</span>
+            <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech px-3 sm:px-4">
+              <Upload className="w-4 h-4 sm:mr-2"/> <span className="hidden sm:inline">Upload</span>
             </Button>
           </Link>
-          <LanguageSwitcher compact/>
+          <div className="hidden sm:block"><LanguageSwitcher compact/></div>
           <Button
             variant="ghost" size="sm"
             className="text-forge-muted hover:text-forge-text hidden md:inline-flex"
@@ -107,6 +107,36 @@ export default function Header({ onOpenContact, onOpenChat }) {
           )}
         </div>
       </div>
+      {/* Compact mobile nav strip */}
+      <nav className="md:hidden border-t border-forge-border overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 px-3 py-2 min-w-max">
+          {[
+            { to: "/",          key: "marketplace" },
+            { to: "/search",    key: "search" },
+            { to: "/community", key: "community" },
+            { to: "/print",     key: "print" },
+          ].map(item => (
+            <NavLink
+              key={item.key}
+              to={item.to}
+              end={item.to === "/"}
+              className={({ isActive }) =>
+                `whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition ${isActive ? "bg-forge-primary text-forge-bg" : "text-forge-muted hover:text-forge-text"}`
+              }
+              data-testid={`mnav-${item.key}`}
+            >
+              {t(`nav.${item.key}`)}
+            </NavLink>
+          ))}
+          <button
+            onClick={() => onOpenContact?.()}
+            className="whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest text-forge-muted hover:text-forge-text transition"
+            data-testid="mnav-contact"
+          >
+            Contact
+          </button>
+        </div>
+      </nav>
     </header>
   );
 }

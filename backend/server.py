@@ -1036,6 +1036,43 @@ async def get_contact():
         }
     }
 
+# ------------------------- Filament stock feed -------------------------
+# Real-time-ish stock signal. In production this would poll the AMS scale.
+# Here we synthesise a value per (material, colour) that varies deterministically
+# with time so the frontend can dim swatches as if spools are running low.
+import hashlib
+
+def _stock_signal(material: str, color: str) -> dict:
+    seed = int(hashlib.md5(f"{material}:{color}".encode()).hexdigest()[:8], 16)
+    # 30-minute cycle so refresh feels live
+    epoch = int(datetime.now(timezone.utc).timestamp() / 1800)
+    pct = ((seed + epoch * 37) % 100)  # 0..99
+    in_stock = pct > 15
+    # ~10% of colours are marked "low"
+    low = 15 < pct < 30
+    restock_hours = None if in_stock else 6 + (seed % 42)
+    return {"in_stock": in_stock, "low_stock": low, "level_pct": pct, "restock_hours": restock_hours}
+
+@api_router.get("/filament/stock")
+async def filament_stock():
+    STANDARD = ["Red", "White", "Blue", "Green", "Gray", "Black"]
+    out = {}
+    for m, restricted in MATERIAL_COLORS.items():
+        colours = restricted if restricted else STANDARD
+        out[m] = {c: _stock_signal(m, c) for c in colours}
+    return {
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "next_refresh_seconds": 30,
+        "materials": out,
+    }
+
+@api_router.get("/filament/store-link")
+async def filament_store_link(material: str = Query("PLA")):
+    """Returns an AnyCubic (or configured) store URL for the given material."""
+    base = os.environ.get("FILAMENT_STORE_BASE", "https://www.anycubic.com/collections/filaments")
+    slug = material.lower().replace(" ", "-").replace("(", "").replace(")", "")
+    return {"material": material, "url": f"{base}?q={slug}", "vendor": os.environ.get("FILAMENT_STORE_NAME", "AnyCubic")}
+
 app.include_router(api_router)
 
 app.add_middleware(

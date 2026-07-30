@@ -60,28 +60,28 @@ export default function Home() {
       {/* HERO */}
       <section className="relative overflow-hidden" data-testid="hero-section">
         <div className="absolute inset-0 grain pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-6 pt-16 pb-20 grid lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-7 space-y-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-14 sm:pb-20 grid lg:grid-cols-12 gap-8 sm:gap-10 items-center">
+          <div className="lg:col-span-7 space-y-6 sm:space-y-8">
             <div className="flex items-center gap-3">
-              <div className="scanline w-16" />
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-forge-tech">{t("hero.eyebrow")}</span>
+              <div className="scanline w-12 sm:w-16" />
+              <span className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.2em] text-forge-tech">{t("hero.eyebrow")}</span>
             </div>
-            <h1 className="font-display font-semibold text-forge-text text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight">
+            <h1 className="font-display font-semibold text-forge-text text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] tracking-tight">
               {t("hero.title1")}<br/>
               <span className="text-forge-primary">{t("hero.title2")}</span><br/>
               {t("hero.title3")}
             </h1>
-            <p className="text-forge-muted text-lg max-w-xl leading-relaxed">
+            <p className="text-forge-muted text-base sm:text-lg max-w-xl leading-relaxed">
               {t("hero.desc")}
             </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link to="/search">
-                <Button className="btn-forge rounded-full px-6 py-6 text-base" data-testid="hero-cta-search">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <Link to="/search" className="w-full sm:w-auto">
+                <Button className="btn-forge rounded-full px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base w-full sm:w-auto" data-testid="hero-cta-search">
                   <Search className="w-4 h-4 mr-2"/> {t("hero.cta_search")}
                 </Button>
               </Link>
-              <Link to="/print">
-                <Button variant="outline" className="rounded-full px-6 py-6 text-base border-forge-border bg-transparent text-forge-text hover:bg-forge-elevated hover:text-forge-text" data-testid="hero-cta-print">
+              <Link to="/print" className="w-full sm:w-auto">
+                <Button variant="outline" className="rounded-full px-5 sm:px-6 py-5 sm:py-6 text-sm sm:text-base w-full sm:w-auto border-forge-border bg-transparent text-forge-text hover:bg-forge-elevated hover:text-forge-text" data-testid="hero-cta-print">
                   {t("hero.cta_send")} <ArrowRight className="w-4 h-4 ml-2"/>
                 </Button>
               </Link>
@@ -115,12 +115,12 @@ export default function Home() {
       </section>
 
       {/* MARKETPLACE */}
-      <section className="max-w-7xl mx-auto px-6 py-14" id="marketplace">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14" id="marketplace">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div>
-            <div className="scanline w-12 mb-3" />
-            <h2 className="font-display font-semibold text-forge-text text-3xl sm:text-4xl">{t("market.title")}</h2>
-            <p className="text-forge-muted mt-2 max-w-xl">{t("market.desc")}</p>
+            <div className="scanline w-10 sm:w-12 mb-3" />
+            <h2 className="font-display font-semibold text-forge-text text-2xl sm:text-3xl lg:text-4xl">{t("market.title")}</h2>
+            <p className="text-forge-muted text-sm sm:text-base mt-2 max-w-xl">{t("market.desc")}</p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-72">
@@ -184,8 +184,8 @@ export default function Home() {
       </section>
 
       {/* MOBILE APP DOWNLOAD */}
-      <section className="max-w-7xl mx-auto px-6 py-14" data-testid="app-download-section">
-        <div className="relative overflow-hidden rounded-2xl border border-forge-border bg-gradient-to-br from-forge-surface via-forge-surface to-forge-primary/10 p-8 md:p-12">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14" data-testid="app-download-section">
+        <div className="relative overflow-hidden rounded-2xl border border-forge-border bg-gradient-to-br from-forge-surface via-forge-surface to-forge-primary/10 p-6 sm:p-8 md:p-12">
           <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-forge-primary/15 blur-3xl pointer-events-none"/>
           <div className="absolute -bottom-20 -left-16 w-72 h-72 rounded-full bg-forge-tech/10 blur-3xl pointer-events-none"/>
 
@@ -195,10 +195,10 @@ export default function Home() {
                 <div className="scanline w-16"/>
                 <span className="font-mono text-xs uppercase tracking-[0.2em] text-forge-tech">PrintForge on the go</span>
               </div>
-              <h2 className="font-display font-semibold text-forge-text text-4xl sm:text-5xl leading-tight mb-4">
+              <h2 className="font-display font-semibold text-forge-text text-3xl sm:text-4xl lg:text-5xl leading-tight mb-4">
                 Take your <span className="text-forge-primary">workshop</span><br/>everywhere.
               </h2>
-              <p className="text-forge-muted text-base leading-relaxed mb-8 max-w-lg">
+              <p className="text-forge-muted text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 max-w-lg">
                 Track live prints, chat with the maker, save designs on the move, and get restock alerts the second new filament lands. Free on iOS &amp; Android.
               </p>
 

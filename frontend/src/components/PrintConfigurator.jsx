@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Zap, Sparkles, Settings2, Info } from "lucide-react";
+import { Zap, Sparkles, Settings2, Info, ExternalLink, ShoppingBag } from "lucide-react";
 
 const DEFAULT_PALETTE = [
   "#FF6B00", "#00F0FF", "#EDEDF0", "#5C5C66",
@@ -53,6 +53,34 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
   );
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [stock, setStock] = useState({});
+  const [storeLink, setStoreLink] = useState(null);
+
+  // Poll filament stock every 30s + fetch AnyCubic store URL for current material
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const [s, l] = await Promise.all([
+          api.get("/filament/stock"),
+          api.get("/filament/store-link", { params: { material } }),
+        ]);
+        if (!cancelled) {
+          setStock(s.data.materials || {});
+          setStoreLink(l.data);
+        }
+      } catch {}
+    };
+    refresh();
+    const t = setInterval(refresh, 30_000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [material]);
+
+  const matStock = stock[material] || {};
+
+  // Helper: reverse lookup a named colour from a hex value
+  const HEX_TO_NAME = Object.fromEntries(Object.entries(NAMED_COLORS).map(([n, h]) => [h.toLowerCase(), n]));
+  const stockFor = (hex) => matStock[HEX_TO_NAME[hex?.toLowerCase()] || ""] || null;
 
   useEffect(() => {
     (async () => {
@@ -195,12 +223,24 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
                 ))}
               </SelectContent>
             </Select>
-            {restrictedTo && (
-              <p className="mt-2 flex items-start gap-1.5 text-[11px] font-mono text-forge-tech" data-testid="material-restriction-note">
-                <Info className="w-3 h-3 mt-0.5 shrink-0"/>
-                <span>Currently stocked in {restrictedTo.join(" / ")} only — extra colours coming soon.</span>
-              </p>
-            )}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {storeLink && (
+                <a
+                  href={storeLink.url}
+                  target="_blank" rel="noreferrer"
+                  data-testid="filament-store-link"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono uppercase tracking-widest border border-forge-border text-forge-tech hover:border-forge-tech hover:bg-forge-tech/5 transition"
+                >
+                  <ShoppingBag className="w-3 h-3"/> Buy {material} on {storeLink.vendor} <ExternalLink className="w-2.5 h-2.5 opacity-60"/>
+                </a>
+              )}
+              {restrictedTo && (
+                <span className="text-[11px] font-mono text-forge-tech inline-flex items-start gap-1" data-testid="material-restriction-note">
+                  <Info className="w-3 h-3 mt-0.5 shrink-0"/>
+                  <span>Stocked in {restrictedTo.join(" / ")} only</span>
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Quality dropdown */}
@@ -306,17 +346,24 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
                             <span className="absolute -top-1 -left-1 font-mono text-[9px] text-forge-bg bg-forge-primary rounded-full w-4 h-4 flex items-center justify-center">{i+1}</span>
                           </div>
                           <div className="flex gap-0.5">
-                            {STANDARD_COLORS.map(sc => (
-                              <button
-                                key={sc.name}
-                                type="button"
-                                title={sc.name}
-                                onClick={() => changeColor(i, sc.hex)}
-                                data-testid={`std-color-${i}-${sc.name.toLowerCase()}`}
-                                className={`w-3.5 h-3.5 rounded-full border transition ${c === sc.hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"}`}
-                                style={{ background: sc.hex }}
-                              />
-                            ))}
+                            {STANDARD_COLORS.map(sc => {
+                              const st = matStock[sc.name] || { in_stock: true };
+                              const disabled = !st.in_stock;
+                              return (
+                                <button
+                                  key={sc.name}
+                                  type="button"
+                                  title={disabled ? `${sc.name} · restocks in ${st.restock_hours || "?"}h` : `${sc.name}${st.low_stock ? " · low" : ""}`}
+                                  onClick={() => !disabled && changeColor(i, sc.hex)}
+                                  disabled={disabled}
+                                  data-testid={`std-color-${i}-${sc.name.toLowerCase()}`}
+                                  className={`relative w-3.5 h-3.5 rounded-full border transition ${c === sc.hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"} ${disabled ? "opacity-25 grayscale cursor-not-allowed" : st.low_stock ? "opacity-70" : ""}`}
+                                  style={{ background: sc.hex }}
+                                >
+                                  {disabled && <span className="absolute inset-0 flex items-center justify-center text-[7px] text-forge-primary">×</span>}
+                                </button>
+                              );
+                            })}
                             <label className="w-3.5 h-3.5 rounded-full border border-forge-border/60 flex items-center justify-center bg-gradient-to-br from-red-500 via-yellow-400 to-blue-500 cursor-pointer hover:scale-110 transition" title="Custom colour">
                               <input type="color" value={c} onChange={(e)=>changeColor(i, e.target.value)} className="opacity-0 absolute w-3.5 h-3.5" data-testid={`custom-color-${i}`}/>
                             </label>
@@ -342,16 +389,21 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
                           <div className="flex gap-0.5">
                             {restrictedTo.map(name => {
                               const hex = NAMED_COLORS[name] || BLACK;
+                              const st = matStock[name] || { in_stock: true };
+                              const disabled = !st.in_stock;
                               return (
                                 <button
                                   key={name}
                                   type="button"
-                                  title={name}
-                                  onClick={() => changeColor(i, hex)}
+                                  title={disabled ? `${name} · restocks in ${st.restock_hours || "?"}h` : `${name}${st.low_stock ? " · low" : ""}`}
+                                  onClick={() => !disabled && changeColor(i, hex)}
+                                  disabled={disabled}
                                   data-testid={`palette-${material}-${i}-${name.toLowerCase()}`}
-                                  className={`w-3.5 h-3.5 rounded-full border transition ${c === hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"}`}
+                                  className={`relative w-3.5 h-3.5 rounded-full border transition ${c === hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"} ${disabled ? "opacity-25 grayscale cursor-not-allowed" : st.low_stock ? "opacity-70" : ""}`}
                                   style={{ background: hex }}
-                                />
+                                >
+                                  {disabled && <span className="absolute inset-0 flex items-center justify-center text-[7px] text-forge-primary">×</span>}
+                                </button>
                               );
                             })}
                           </div>

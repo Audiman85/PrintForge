@@ -55,12 +55,12 @@ export default function ProductDetail() {
   const grandTotal = printSubtotal + shippingCost;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
-      <Link to="/" className="inline-flex items-center gap-2 text-forge-muted hover:text-forge-primary text-sm mb-6" data-testid="back-btn">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <Link to="/" className="inline-flex items-center gap-2 text-forge-muted hover:text-forge-primary text-sm mb-4 sm:mb-6" data-testid="back-btn">
         <ArrowLeft className="w-4 h-4"/> {t("product.back")}
       </Link>
 
-      <div className="grid lg:grid-cols-12 gap-8">
+      <div className="grid lg:grid-cols-12 gap-6 sm:gap-8">
         {/* Left: 3D preview + reference */}
         <div className="lg:col-span-6 space-y-4">
           <ModelPreview
@@ -68,7 +68,7 @@ export default function ProductDetail() {
             colors={previewState.colors}
             quality={previewState.config.quality}
             nozzleMm={previewState.config.nozzle_mm}
-            height={440}
+            height={typeof window !== 'undefined' && window.innerWidth < 640 ? 300 : 440}
           />
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-xl overflow-hidden border border-forge-border">
