@@ -140,6 +140,97 @@ class DesignShareCreate(BaseModel):
     tags: List[str] = []
     is_public: bool = True
 
+class QuoteRequest(BaseModel):
+    product_id: Optional[str] = None
+    weight_grams: Optional[float] = None       # override product default
+    volume_cm3: Optional[float] = None         # optional secondary hint
+    material: str = "PLA"
+    quality: str = "regular"                    # "regular" | "hi" | "draft"
+    nozzle_mm: float = 0.4                       # 0.25 | 0.4 | 0.6 | 0.8
+    colors: int = 1                              # 1..8
+    quantity: int = 1
+    infill_pct: int = 20                         # 5..100
+
+# ------------------------- Pricing engine -------------------------
+MATERIAL_PRICE_PER_GRAM = {
+    "PLA":       0.05,
+    "PETG":      0.06,
+    "ABS":       0.055,
+    "TPU":       0.09,
+    "Wood-PLA":  0.09,
+    "Silk-PLA":  0.075,
+    "Carbon-PLA":0.13,
+    "Resin":     0.18,
+    "PA (Nylon)":0.15,
+    "PC":        0.14,
+}
+QUALITY_MULT = {"draft": 0.85, "regular": 1.00, "hi": 1.35}
+QUALITY_LAYER_MM = {"draft": 0.28, "regular": 0.20, "hi": 0.12}
+NOZZLE_MULT = {0.25: 1.55, 0.4: 1.00, 0.6: 0.82, 0.8: 0.70}     # smaller = slower/more expensive
+NOZZLE_TIME_MULT = {0.25: 1.9, 0.4: 1.0, 0.6: 0.65, 0.8: 0.5}
+COLOR_ADDON_PER_EXTRA = 0.14   # +14% per additional colour on top of base
+COLOR_SWAP_FIXED = 1.20        # fixed handling fee per extra colour (USD)
+MACHINE_RATE_PER_HOUR = 1.60   # USD/h machine amortization + power
+LABOUR_FIXED = 3.50            # setup, slicing, QA, packing
+SHIPPING_BASE = 6.00
+
+def _round(x: float, n: int = 2) -> float:
+    return round(float(x) + 1e-9, n)
+
+def compute_quote(*, weight_grams: float, print_time_hours: float, material: str,
+                  quality: str, nozzle_mm: float, colors: int, quantity: int,
+                  infill_pct: int) -> dict:
+    material = material if material in MATERIAL_PRICE_PER_GRAM else "PLA"
+    quality = quality if quality in QUALITY_MULT else "regular"
+    if nozzle_mm not in NOZZLE_MULT:
+        nozzle_mm = 0.4
+    colors = max(1, min(8, int(colors)))
+    quantity = max(1, min(50, int(quantity)))
+    infill_pct = max(5, min(100, int(infill_pct)))
+    price_g = MATERIAL_PRICE_PER_GRAM[material]
+
+    # Weight scales with infill (base assumes 20% infill baseline)
+    weight_adj = weight_grams * (0.55 + 0.45 * (infill_pct / 20.0))
+    weight_adj = max(weight_adj, weight_grams * 0.55)
+
+    # Time scales with quality (layer height) and nozzle
+    layer = QUALITY_LAYER_MM[quality]
+    time_h = print_time_hours * (0.20 / layer) * NOZZLE_TIME_MULT[nozzle_mm]
+
+    material_cost = weight_adj * price_g * QUALITY_MULT[quality] * NOZZLE_MULT[nozzle_mm]
+    machine_cost = time_h * MACHINE_RATE_PER_HOUR
+    colour_cost = (colors - 1) * (material_cost * COLOR_ADDON_PER_EXTRA + COLOR_SWAP_FIXED)
+    unit_subtotal = material_cost + machine_cost + colour_cost + LABOUR_FIXED
+    line_subtotal = unit_subtotal * quantity
+    # Bulk discount
+    if quantity >= 10: line_subtotal *= 0.90
+    elif quantity >= 5: line_subtotal *= 0.95
+    shipping = SHIPPING_BASE + max(0, quantity - 1) * 0.5
+    total = line_subtotal + shipping
+
+    return {
+        "material": material,
+        "quality": quality,
+        "layer_mm": _round(layer, 2),
+        "nozzle_mm": nozzle_mm,
+        "colors": colors,
+        "quantity": quantity,
+        "infill_pct": infill_pct,
+        "estimated_weight_grams": _round(weight_adj, 1),
+        "estimated_time_hours": _round(time_h, 2),
+        "breakdown": {
+            "material_cost": _round(material_cost),
+            "machine_cost": _round(machine_cost),
+            "colour_cost": _round(colour_cost),
+            "labour": _round(LABOUR_FIXED),
+            "shipping": _round(shipping),
+        },
+        "unit_price": _round(unit_subtotal),
+        "line_subtotal": _round(line_subtotal),
+        "total_price": _round(total),
+        "currency": "USD",
+    }
+
 # ------------------------- Auth routes -------------------------
 @api_router.post("/auth/session")
 async def auth_session(payload: SessionRequest, response: Response):
@@ -225,6 +316,59 @@ async def create_product(payload: ProductCreate):
     })
     await db.products.insert_one(doc)
     return {"product_id": product_id}
+
+# ------------------------- Quote endpoint -------------------------
+@api_router.get("/quote/config")
+async def quote_config():
+    return {
+        "materials": [
+            {"name": m, "price_per_gram": p} for m, p in MATERIAL_PRICE_PER_GRAM.items()
+        ],
+        "qualities": [
+            {"name": "draft",   "label": "Draft",    "layer_mm": QUALITY_LAYER_MM["draft"],   "multiplier": QUALITY_MULT["draft"]},
+            {"name": "regular", "label": "Regular",  "layer_mm": QUALITY_LAYER_MM["regular"], "multiplier": QUALITY_MULT["regular"]},
+            {"name": "hi",      "label": "Hi (fine)","layer_mm": QUALITY_LAYER_MM["hi"],      "multiplier": QUALITY_MULT["hi"]},
+        ],
+        "nozzles": [
+            {"mm": 0.25, "label": "0.25 · Fine detail", "multiplier": NOZZLE_MULT[0.25]},
+            {"mm": 0.4,  "label": "0.4 · Standard",     "multiplier": NOZZLE_MULT[0.4]},
+            {"mm": 0.6,  "label": "0.6 · Faster",       "multiplier": NOZZLE_MULT[0.6]},
+            {"mm": 0.8,  "label": "0.8 · Bulk",         "multiplier": NOZZLE_MULT[0.8]},
+        ],
+        "max_colors": 8,
+        "shipping_base": SHIPPING_BASE,
+        "labour_fixed": LABOUR_FIXED,
+        "machine_rate_per_hour": MACHINE_RATE_PER_HOUR,
+    }
+
+@api_router.post("/quote")
+async def make_quote(payload: QuoteRequest):
+    weight = payload.weight_grams
+    time_h = None
+    if payload.product_id:
+        p = await db.products.find_one({"product_id": payload.product_id}, {"_id": 0})
+        if not p:
+            raise HTTPException(404, "Product not found")
+        weight = weight or p.get("print_weight_grams") or 60.0
+        time_h = p.get("print_time_hours") or 4.0
+    if weight is None:
+        # Fall back on volume estimate — assume 1.24 g/cm3 PLA density
+        weight = (payload.volume_cm3 or 40.0) * 1.24
+    if time_h is None:
+        # Rough heuristic: 12 g/h at 0.4 nozzle / regular quality
+        time_h = max(0.5, weight / 12.0)
+    q = compute_quote(
+        weight_grams=float(weight),
+        print_time_hours=float(time_h),
+        material=payload.material,
+        quality=payload.quality,
+        nozzle_mm=float(payload.nozzle_mm),
+        colors=payload.colors,
+        quantity=payload.quantity,
+        infill_pct=payload.infill_pct,
+    )
+    q["product_id"] = payload.product_id
+    return q
 
 # ------------------------- External search (aggregated) -------------------------
 SEARCH_SITES = [
@@ -504,20 +648,25 @@ async def download_file(path: str = Query(...)):
 
 # ------------------------- Seed products -------------------------
 SEED_PRODUCTS = [
-    {"title": "Articulated Dragon", "description": "Flexi print-in-place dragon with realistic scales. No supports required. Cinematic detail.", "category": "toys", "price": 24.0, "print_time_hours": 8.5, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=800", "tags": ["flexi", "dragon", "print-in-place"]},
-    {"title": "Modular Desk Organizer", "description": "Snap-together compartments for pens, cables and small tools. Stackable modules.", "category": "home", "price": 18.0, "print_time_hours": 5.0, "material": "PETG", "image_url": "https://images.unsplash.com/photo-1748852458189-38b171a9e7ec?w=800", "tags": ["desk", "organizer", "modular"]},
-    {"title": "Low-Poly Fox Bust", "description": "Faceted geometric fox bust — a designer statement piece for shelves.", "category": "art", "price": 32.0, "print_time_hours": 6.0, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1703221561813-cdaa308cf9e7?w=800", "tags": ["lowpoly", "art", "sculpture"]},
-    {"title": "Tabletop Terrain Tile Set", "description": "6-piece modular sci-fi terrain tiles for tabletop wargaming.", "category": "gaming", "price": 46.0, "print_time_hours": 14.0, "material": "PLA", "image_url": "https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["terrain", "wargaming", "modular"]},
-    {"title": "Cable Management Clips (x10)", "description": "Snap-on cable clips for standard desk edges. Clean cable routing in minutes.", "category": "home", "price": 8.0, "print_time_hours": 2.0, "material": "PETG", "image_url": "https://images.pexels.com/photos/30720501/pexels-photo-30720501.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["cables", "clip", "utility"]},
-    {"title": "Geometric Planter", "description": "Hexagonal succulent planter with drainage insert. Two-part print.", "category": "home", "price": 22.0, "print_time_hours": 4.5, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800", "tags": ["planter", "geometric", "plants"]},
-    {"title": "Miniature Knight (32mm)", "description": "Detailed 32mm knight miniature for tabletop RPG campaigns.", "category": "gaming", "price": 12.0, "print_time_hours": 3.0, "material": "Resin", "image_url": "https://images.unsplash.com/photo-1611329695518-1763fc1fcf4d?w=800", "tags": ["mini", "rpg", "resin"]},
-    {"title": "Phone Stand — Adjustable", "description": "Tilt-adjustable phone stand with integrated cable pass-through.", "category": "home", "price": 14.0, "print_time_hours": 2.5, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1512446816042-444d641267d4?w=800", "tags": ["phone", "stand", "adjustable"]},
-    {"title": "Voronoi Lamp Shade", "description": "Organic voronoi lattice lamp shade. Diffuses warm light beautifully.", "category": "art", "price": 38.0, "print_time_hours": 12.0, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=800", "tags": ["lamp", "voronoi", "decor"]},
+    {"title": "Articulated Dragon", "description": "Flexi print-in-place dragon with realistic scales. No supports required. Cinematic detail.", "category": "toys", "price": 24.0, "print_time_hours": 8.5, "print_weight_grams": 95, "preview_shape": "torusknot", "recommended_colors": 3, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=800", "tags": ["flexi", "dragon", "print-in-place"]},
+    {"title": "Modular Desk Organizer", "description": "Snap-together compartments for pens, cables and small tools. Stackable modules.", "category": "home", "price": 18.0, "print_time_hours": 5.0, "print_weight_grams": 140, "preview_shape": "box", "recommended_colors": 1, "material": "PETG", "image_url": "https://images.unsplash.com/photo-1748852458189-38b171a9e7ec?w=800", "tags": ["desk", "organizer", "modular"]},
+    {"title": "Low-Poly Fox Bust", "description": "Faceted geometric fox bust — a designer statement piece for shelves.", "category": "art", "price": 32.0, "print_time_hours": 6.0, "print_weight_grams": 110, "preview_shape": "icosahedron", "recommended_colors": 2, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1703221561813-cdaa308cf9e7?w=800", "tags": ["lowpoly", "art", "sculpture"]},
+    {"title": "Tabletop Terrain Tile Set", "description": "6-piece modular sci-fi terrain tiles for tabletop wargaming.", "category": "gaming", "price": 46.0, "print_time_hours": 14.0, "print_weight_grams": 220, "preview_shape": "octahedron", "recommended_colors": 4, "material": "PLA", "image_url": "https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["terrain", "wargaming", "modular"]},
+    {"title": "Cable Management Clips (x10)", "description": "Snap-on cable clips for standard desk edges. Clean cable routing in minutes.", "category": "home", "price": 8.0, "print_time_hours": 2.0, "print_weight_grams": 25, "preview_shape": "cylinder", "recommended_colors": 1, "material": "PETG", "image_url": "https://images.pexels.com/photos/30720501/pexels-photo-30720501.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["cables", "clip", "utility"]},
+    {"title": "Geometric Planter", "description": "Hexagonal succulent planter with drainage insert. Two-part print.", "category": "home", "price": 22.0, "print_time_hours": 4.5, "print_weight_grams": 130, "preview_shape": "dodecahedron", "recommended_colors": 2, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800", "tags": ["planter", "geometric", "plants"]},
+    {"title": "Miniature Knight (32mm)", "description": "Detailed 32mm knight miniature for tabletop RPG campaigns.", "category": "gaming", "price": 12.0, "print_time_hours": 3.0, "print_weight_grams": 18, "preview_shape": "cone", "recommended_colors": 5, "material": "Resin", "image_url": "https://images.unsplash.com/photo-1611329695518-1763fc1fcf4d?w=800", "tags": ["mini", "rpg", "resin"]},
+    {"title": "Phone Stand — Adjustable", "description": "Tilt-adjustable phone stand with integrated cable pass-through.", "category": "home", "price": 14.0, "print_time_hours": 2.5, "print_weight_grams": 70, "preview_shape": "box", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1512446816042-444d641267d4?w=800", "tags": ["phone", "stand", "adjustable"]},
+    {"title": "Voronoi Lamp Shade", "description": "Organic voronoi lattice lamp shade. Diffuses warm light beautifully.", "category": "art", "price": 38.0, "print_time_hours": 12.0, "print_weight_grams": 180, "preview_shape": "sphere", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=800", "tags": ["lamp", "voronoi", "decor"]},
 ]
 
 @app.on_event("startup")
 async def on_startup():
     init_storage()
+    # Reset & reseed if product count differs from seed list (keeps demo fresh with new fields)
+    existing = await db.products.count_documents({})
+    if existing != len(SEED_PRODUCTS):
+        await db.products.delete_many({})
+        await db.wishlist.delete_many({})
     count = await db.products.count_documents({})
     if count == 0:
         for p in SEED_PRODUCTS:
@@ -528,6 +677,19 @@ async def on_startup():
                 "created_at": datetime.now(timezone.utc).isoformat(),
             })
         logger.info(f"Seeded {len(SEED_PRODUCTS)} products")
+    else:
+        # Backfill missing preview_shape / print_weight_grams on existing docs
+        shapes = ["torusknot", "box", "icosahedron", "octahedron", "cylinder", "dodecahedron", "cone", "sphere"]
+        async for p in db.products.find({}):
+            update = {}
+            if "preview_shape" not in p:
+                update["preview_shape"] = shapes[hash(p.get("title","")) % len(shapes)]
+            if "print_weight_grams" not in p:
+                update["print_weight_grams"] = max(20, int((p.get("print_time_hours", 4) or 4) * 14))
+            if "recommended_colors" not in p:
+                update["recommended_colors"] = 1
+            if update:
+                await db.products.update_one({"product_id": p["product_id"]}, {"$set": update})
 
 @api_router.get("/")
 async def root():
