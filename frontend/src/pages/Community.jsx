@@ -22,14 +22,19 @@ function loginWithGoogle() {
 export default function Community() {
   const [designs, setDesigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [supporterEmails, setSupporterEmails] = useState(new Set());
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/designs");
-      setDesigns(data);
+      const [dRes, sRes] = await Promise.all([
+        api.get("/designs"),
+        api.get("/supporters/emails").catch(() => ({ data: { emails: [] } })),
+      ]);
+      setDesigns(dRes.data);
+      setSupporterEmails(new Set((sRes.data?.emails || []).map(e => (e || "").toLowerCase())));
     } finally { setLoading(false); }
   };
   useEffect(()=>{ load(); },[]);

@@ -271,7 +271,6 @@ function PrinterInfoStrip() {
             <SpecRow label="Hotend"       value={`up to ${info.max_temp_hotend_c}°C`}/>
             <SpecRow label="Heated bed"   value={`up to ${info.max_temp_bed_c}°C`}/>
             <SpecRow label="Colours"      value={`${info.colors} filaments (AMS)`}/>
-            <SpecRow label="Materials"    value={info.supported_materials.slice(0,4).join(" · ") + (info.supported_materials.length > 4 ? "…" : "")}/>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {info.features.slice(0, 6).map(f => <span key={f} className="chip">{f}</span>)}
