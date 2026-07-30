@@ -99,16 +99,16 @@ export default function ChatWidget({ openState, onOpenChange }) {
       <button
         onClick={() => setOpen(true)}
         data-testid="chat-open-btn"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full btn-forge shadow-2xl flex items-center justify-center animate-forge-pulse"
+        className="fixed bottom-24 right-4 sm:right-6 lg:bottom-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full btn-forge shadow-2xl flex items-center justify-center animate-forge-pulse"
         aria-label="Open chat"
       >
-        <MessageCircle className="w-6 h-6"/>
+        <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6"/>
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[80vh] card-forge flex flex-col overflow-hidden" data-testid="chat-widget">
+    <div className="fixed bottom-24 right-4 sm:right-6 lg:bottom-6 z-40 w-[92vw] sm:w-[380px] max-w-[calc(100vw-2rem)] h-[520px] sm:h-[560px] max-h-[70vh] card-forge flex flex-col overflow-hidden" data-testid="chat-widget">
       <div className="p-4 border-b border-forge-border flex items-center justify-between bg-forge-elevated">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-full bg-forge-primary/15 border border-forge-primary flex items-center justify-center shrink-0">

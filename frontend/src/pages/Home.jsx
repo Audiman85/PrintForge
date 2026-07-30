@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
+import SupporterWall from "@/components/SupporterWall";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
@@ -10,7 +11,7 @@ import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight, Activity, MessageCirc
 import { Link } from "react-router-dom";
 import { usePwa } from "@/context/PwaContext";
 
-export default function Home() {
+export default function Home({ onOpenDonate }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [wishlistIds, setWishlistIds] = useState(new Set());
@@ -98,7 +99,7 @@ export default function Home() {
           </div>
           <div className="lg:col-span-5 relative">
             <div className="relative rounded-2xl overflow-hidden border border-forge-border">
-              <img src="https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800" alt="3D printer" className="w-full h-[520px] object-cover"/>
+              <img src="https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800" alt="3D printer" className="w-full h-[280px] sm:h-[380px] lg:h-[520px] object-cover"/>
               <div className="absolute inset-0 bg-gradient-to-t from-forge-bg via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
                 <div className="glass rounded-lg px-4 py-3">
@@ -212,7 +213,7 @@ export default function Home() {
                   data-testid="install-pwa-btn"
                   className="relative inline-flex items-center gap-3 bg-forge-primary text-forge-bg px-5 py-3 rounded-xl hover:bg-forge-primaryHover transition disabled:opacity-70 disabled:cursor-default"
                 >
-                  <Download className="w-7 h-7"/>
+                  <Download className="w-8 h-8"/>
                   <div className="text-left">
                     <div className="text-[10px] font-mono uppercase tracking-widest opacity-80 leading-none">
                       {isStandalone ? "Already installed" : canInstall ? "Install now" : "Add to home screen"}
@@ -221,11 +222,8 @@ export default function Home() {
                       {isStandalone ? "Open the app" : "Install Web App"}
                     </div>
                   </div>
-                  {!isStandalone && <span className="absolute -top-2 -right-2 chip chip-tech text-[9px]">FREE</span>}
                 </button>
-              </div>
 
-              <div className="flex flex-wrap gap-3 mb-4">
                 <button
                   type="button"
                   onClick={(e) => e.preventDefault()}
@@ -284,9 +282,12 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SUPPORTER WALL */}
+      <SupporterWall onDonate={onOpenDonate} />
+
       {/* FEATURE STRIP */}
-      <section className="max-w-7xl mx-auto px-6 py-14">
-        <div className="grid md:grid-cols-3 gap-4">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {[
             {icon:Search, title:"Search Everywhere", desc:"Cross-search Thingiverse, Printables, Cults3D & more in one command palette.", to:"/search", cta:"Open search"},
             {icon:Rocket, title:"Send Us A File", desc:"Upload STL/OBJ/3MF — we'll print in your material and colour, then ship.", to:"/print", cta:"Send to print"},
@@ -393,10 +394,9 @@ function AppScreensCarousel() {
       <div className="relative w-56 aspect-[9/19] rounded-[2.5rem] bg-forge-bg border-[6px] border-forge-elevated shadow-2xl overflow-hidden z-10 transition-all duration-500" data-testid={`app-screen-${s.key}`}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-forge-elevated rounded-b-2xl z-20"/>
         {/* Kobra S1 hero visual */}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${s.tint}22 0%, transparent 40%), radial-gradient(ellipse at 50% 20%, ${s.tint}55, transparent 60%), #0A0A0C` }}/>
-        <div className="absolute top-16 left-4 right-4 flex items-start justify-between">
+        <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${s.tint}22 0%, transparent 40%), radial-gradient(ellipse at 50% 20%, ${s.tint}55, transparent 60%), #0A0A0C` }}/>        <div className="absolute top-16 left-4 right-4 flex items-start justify-between">
           <div>
-            <div className="font-mono text-[9px] uppercase tracking-widest text-forge-tech">Kobra S1</div>
+            <div className="font-mono text-[9px] uppercase tracking-widest text-forge-tech">PrintForge</div>
             <div className="font-display text-forge-text text-sm leading-tight mt-0.5">{s.title}</div>
           </div>
           <Icon className="w-5 h-5" style={{ color: s.tint }}/>

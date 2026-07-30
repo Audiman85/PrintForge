@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
-import os, uuid, logging, requests, mimetypes
+import os, uuid, logging, requests, mimetypes, stripe
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -551,7 +551,7 @@ async def shipping_carriers():
 SEARCH_SITES = [
     {"source": "Thingiverse",    "url": "https://www.thingiverse.com/search?q={q}",             "type": "free",     "focus": "Community classics",   "thumb": "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=400"},
     {"source": "Printables",     "url": "https://www.printables.com/search/models?q={q}",       "type": "free",     "focus": "Prusa community",      "thumb": "https://images.unsplash.com/photo-1748852458189-38b171a9e7ec?w=400"},
-    {"source": "MyMiniFactory",  "url": "https://www.myminifactory.com/search?query={q}",       "type": "mixed",    "focus": "Curated sculpts",      "thumb": "https://images.unsplash.com/photo-1703221561813-cdaa308cf9e7?w=400"},
+    {"source": "MyMiniFactory",  "url": "https://www.myminifactory.com/search?query={q}",       "type": "mixed",    "focus": "3D Marketplace sculpts",      "thumb": "https://images.unsplash.com/photo-1703221561813-cdaa308cf9e7?w=400"},
     {"source": "Cults3D",        "url": "https://cults3d.com/en/search?q={q}",                  "type": "mixed",    "focus": "Designer marketplace", "thumb": "https://images.pexels.com/photos/30720501/pexels-photo-30720501.jpeg?auto=compress&cs=tinysrgb&h=400"},
     {"source": "Thangs",         "url": "https://thangs.com/search/{q}",                        "type": "free",     "focus": "Geometric search",     "thumb": "https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=400"},
     {"source": "GrabCAD",        "url": "https://grabcad.com/library?query={q}",                "type": "free",     "focus": "Engineering CAD",      "thumb": "https://images.unsplash.com/photo-1581093588401-fbb62a02f120?w=400"},
@@ -608,7 +608,7 @@ async def external_search(
     sources: Optional[str] = Query(None, description="Comma-separated list of source names to include"),
     limit: int = Query(24, ge=1, le=60),
 ):
-    """Aggregate 3D model search results across 18 major sites. Returns curated cross-site
+    """Aggregate 3D model search results across 18 major sites. Returns 3D Marketplace cross-site
     results. Real Thingiverse/Printables APIs can be wired in when API keys are provided.
     Optional `sources` filter narrows to a subset of sites."""
     active = SEARCH_SITES
@@ -621,7 +621,7 @@ async def external_search(
     results = []
     idx = 0
     for site in active:
-        # Two curated results per site
+        # Two 3D Marketplace results per site
         for j in range(2):
             template = _TITLE_TEMPLATES[(_hash_int(q_clean + site["source"] + str(j), len(_TITLE_TEMPLATES)))]
             author = _AUTHORS[_hash_int(site["source"] + str(j), len(_AUTHORS))]
@@ -1081,6 +1081,188 @@ async def filament_store_link(material: str = Query("PLA")):
         sep = "&" if "?" in url else "?"
         url = f"{url}{sep}ref={ref}"
     return {"material": material, "url": url, "vendor": vendor, "ref": ref or None}
+
+app.include_router(api_router)
+
+# ------------------------- Stripe Donations -------------------------
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY") or "sk_test_emergent"
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+DONATION_PRESETS_CENTS = {"tip_3": 300, "tip_5": 500, "tip_10": 1000}
+DONATION_MIN_CENTS = 100
+DONATION_MAX_CENTS = 50000
+
+class DonateCheckoutRequest(BaseModel):
+    package_id: Optional[str] = None  # "tip_3" | "tip_5" | "tip_10" | "custom"
+    custom_amount_cents: Optional[int] = None
+    origin_url: str
+    supporter_name: Optional[str] = None
+    supporter_message: Optional[str] = None
+    is_anonymous: bool = False
+
+@api_router.post("/donate/checkout")
+async def donate_checkout(req: DonateCheckoutRequest):
+    if req.package_id in DONATION_PRESETS_CENTS:
+        amount_cents = DONATION_PRESETS_CENTS[req.package_id]
+    else:
+        if not req.custom_amount_cents:
+            raise HTTPException(400, "custom_amount_cents required when package_id is not a preset")
+        if req.custom_amount_cents < DONATION_MIN_CENTS or req.custom_amount_cents > DONATION_MAX_CENTS:
+            raise HTTPException(400, f"Amount must be between ${DONATION_MIN_CENTS/100:.2f} and ${DONATION_MAX_CENTS/100:.2f}")
+        amount_cents = int(req.custom_amount_cents)
+
+    name = (req.supporter_name or "").strip()[:80]
+    msg = (req.supporter_message or "").strip()[:200]
+    is_anon = bool(req.is_anonymous) or not name
+
+    metadata = {
+        "purpose": "donation",
+        "supporter_name": "" if is_anon else name,
+        "supporter_message": msg,
+        "is_anonymous": "true" if is_anon else "false",
+    }
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": amount_cents,
+                    "product_data": {
+                        "name": "PrintForge Supporter Donation",
+                        "description": "One-time contribution to support PrintForge.",
+                    },
+                },
+                "quantity": 1,
+            }],
+            success_url=f"{req.origin_url}/donate/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{req.origin_url}/donate/cancel",
+            metadata=metadata,
+            payment_intent_data={"metadata": metadata},
+        )
+    except stripe.error.StripeError as e:
+        logger.exception("Stripe checkout create failed")
+        raise HTTPException(500, f"Stripe error: {e.user_message or str(e)}")
+
+    await db.payment_transactions.insert_one({
+        "session_id": session.id,
+        "purpose": "donation",
+        "amount_cents": amount_cents,
+        "amount": amount_cents / 100.0,
+        "currency": "usd",
+        "supporter_name": metadata["supporter_name"],
+        "supporter_message": metadata["supporter_message"],
+        "is_anonymous": is_anon,
+        "status": "initiated",
+        "payment_status": "pending",
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    })
+    return {"checkout_url": session.url, "session_id": session.id, "amount_cents": amount_cents}
+
+
+async def _mark_donation_paid(session_id: str) -> Optional[dict]:
+    """Idempotently promote a donation transaction to paid and insert a supporter row."""
+    tx = await db.payment_transactions.find_one({"session_id": session_id})
+    if not tx or tx.get("payment_status") == "paid":
+        return tx
+    result = await db.payment_transactions.find_one_and_update(
+        {"session_id": session_id, "payment_status": {"$ne": "paid"}},
+        {"$set": {"status": "completed", "payment_status": "paid",
+                  "updated_at": datetime.now(timezone.utc)}},
+        return_document=True,
+    )
+    if not result:
+        return tx
+    await db.supporters.update_one(
+        {"session_id": session_id},
+        {"$setOnInsert": {
+            "id": str(uuid.uuid4()),
+            "session_id": session_id,
+            "name": "" if result.get("is_anonymous") else (result.get("supporter_name") or ""),
+            "message": result.get("supporter_message") or "",
+            "is_anonymous": bool(result.get("is_anonymous")),
+            "amount_cents": result.get("amount_cents", 0),
+            "created_at": datetime.now(timezone.utc),
+        }},
+        upsert=True,
+    )
+    return result
+
+
+@api_router.get("/donate/status/{session_id}")
+async def donate_status(session_id: str):
+    tx = await db.payment_transactions.find_one({"session_id": session_id})
+    if not tx:
+        raise HTTPException(404, "Transaction not found")
+    if tx.get("payment_status") != "paid":
+        try:
+            s = stripe.checkout.Session.retrieve(session_id)
+            if s.payment_status == "paid" or s.status == "complete":
+                await _mark_donation_paid(session_id)
+                tx = await db.payment_transactions.find_one({"session_id": session_id})
+        except stripe.error.StripeError:
+            pass
+    return {
+        "session_id": tx["session_id"],
+        "status": tx["status"],
+        "payment_status": tx["payment_status"],
+        "amount_cents": tx.get("amount_cents", 0),
+    }
+
+
+@api_router.post("/stripe/webhook")
+async def stripe_webhook(request: Request):
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        if STRIPE_WEBHOOK_SECRET:
+            event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+        else:
+            import json as _json
+            event = _json.loads(payload.decode() or "{}")
+    except (stripe.error.SignatureVerificationError, ValueError):
+        raise HTTPException(400, "Invalid webhook payload")
+    obj = event.get("data", {}).get("object", {}) if isinstance(event, dict) else event["data"]["object"]
+    t = event.get("type") if isinstance(event, dict) else event["type"]
+    if t in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+        await _mark_donation_paid(obj.get("id"))
+    elif t == "checkout.session.async_payment_failed":
+        await db.payment_transactions.update_one(
+            {"session_id": obj.get("id")},
+            {"$set": {"status": "failed", "payment_status": "failed",
+                      "updated_at": datetime.now(timezone.utc)}},
+        )
+    elif t == "checkout.session.expired":
+        await db.payment_transactions.update_one(
+            {"session_id": obj.get("id")},
+            {"$set": {"status": "expired", "payment_status": "expired",
+                      "updated_at": datetime.now(timezone.utc)}},
+        )
+    return {"status": "ok"}
+
+
+@api_router.get("/supporters")
+async def list_supporters(limit: int = Query(50, ge=1, le=200)):
+    cursor = db.supporters.find({}).sort("created_at", -1).limit(limit)
+    items = []
+    async for s in cursor:
+        items.append({
+            "id": s.get("id"),
+            "name": s.get("name") or "",
+            "message": s.get("message") or "",
+            "is_anonymous": bool(s.get("is_anonymous")),
+            "amount_cents": int(s.get("amount_cents", 0)),
+            "created_at": (s.get("created_at").isoformat()
+                            if isinstance(s.get("created_at"), datetime) else None),
+        })
+    total_count = 0
+    total_cents = 0
+    async for a in db.supporters.aggregate([
+        {"$group": {"_id": None, "count": {"$sum": 1}, "total": {"$sum": "$amount_cents"}}}
+    ]):
+        total_count = int(a.get("count") or 0)
+        total_cents = int(a.get("total") or 0)
+    return {"supporters": items, "count": total_count, "total_cents": total_cents}
 
 app.include_router(api_router)
 

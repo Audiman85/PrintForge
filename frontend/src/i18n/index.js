@@ -21,7 +21,7 @@ const resources = {
   en: { translation: {
     nav: { marketplace: "Home", search: "Search", community: "Community", print: "Send To Print", dashboard: "Dashboard", wishlist: "Wishlist", designs: "My Designs", orders: "My Orders", signin: "Sign in", signout: "Sign out" },
     hero: { eyebrow: "3D · PRINT · MARKETPLACE", title1: "Forge your next", title2: "three-dimensional", title3: "obsession.", desc: "Discover print-ready designs, search every major model site in one place, and send us any file to have it printed and shipped. A workbench for the maker era.", cta_search: "Search 3D models", cta_send: "Send a file to print" },
-    market: { title: "Curated Marketplace", desc: "Hand-picked designs ready to order — every model tested and printed in our lab.", search_ph: "Search catalog…" },
+    market: { title: "3D Marketplace", desc: "Hand-picked designs ready to order — every model tested and printed in our lab.", search_ph: "Search catalog…" },
     product: { back: "Back to marketplace", request_print: "Request a print" },
     wishlist: { save: "Save", saved: "Saved", added: "Added to wishlist", removed: "Removed from wishlist", signin_required: "Sign in to save to wishlist" },
     chat: { title: "Chat with the maker", placeholder: "Type your message…", send: "Send", empty: "Send a message and we'll reply. Messages are auto-translated in both directions.", you: "You", owner: "Maker", translated_from: "translated from", show_original: "show original", show_translation: "show translation", signin_required: "Sign in to start a chat", langbar: "Chat language" },
@@ -75,7 +75,7 @@ const resources = {
   nl: { translation: {
     nav: { marketplace: "Home", search: "Zoeken", community: "Community", print: "Print sturen", dashboard: "Dashboard", wishlist: "Verlanglijst", designs: "Mijn ontwerpen", orders: "Mijn bestellingen", signin: "Inloggen", signout: "Uitloggen" },
     hero: { eyebrow: "3D · PRINT · MARKTPLAATS", title1: "Smeed je volgende", title2: "driedimensionale", title3: "obsessie.", desc: "Ontdek printklare ontwerpen en stuur ons elk bestand om te printen.", cta_search: "3D-modellen zoeken", cta_send: "Bestand sturen" },
-    market: { title: "Curated Marketplace", desc: "Handgekozen ontwerpen — elk model in ons lab getest.", search_ph: "Catalogus zoeken…" },
+    market: { title: "3D Marketplace", desc: "Handgekozen ontwerpen — elk model in ons lab getest.", search_ph: "Catalogus zoeken…" },
     product: { back: "Terug", request_print: "Print aanvragen" },
     wishlist: { save: "Bewaar", saved: "Bewaard", added: "Toegevoegd", removed: "Verwijderd", signin_required: "Log in om te bewaren" },
     chat: { title: "Chat met de maker", placeholder: "Typ je bericht…", send: "Verstuur", empty: "Stuur een bericht — automatisch vertaald.", you: "Jij", owner: "Maker", translated_from: "vertaald uit", show_original: "origineel", show_translation: "vertaling", signin_required: "Log in om te chatten", langbar: "Chattaal" },

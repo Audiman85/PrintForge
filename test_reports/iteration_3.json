@@ -1,0 +1,25 @@
+{
+  "summary": "Iteration 3 tested the new Stripe donation flow end-to-end plus the mobile UX refactor. Backend: 19/19 pytest cases PASS covering preset checkout (tip_3/tip_5/tip_10 -> 300/500/1000 cents), custom-amount validation (250 OK, 50 -> 400, 60000 -> 400, missing amount -> 400), donate/status (404 unknown + pending for freshly created session), synthetic Stripe webhook (checkout.session.completed marks transaction paid and inserts supporter row idempotently), /api/supporters shape + totals, anonymous vs named handling (blank name when is_anonymous=true, and empty name auto-anonymised), plus regressions (products, categories, shipping/quotes POST, filament/stock, filament/store-link, external search wording -> source_focus now says '3D Marketplace sculpts', no 'curated'). Frontend mobile @390px: Home renders compact search + Upload + Donate + Sign-in row with Home/Community/Contact strip, no horizontal scroll. Product page: no horizontal scroll, chat-open-btn sits above mobile-cta-order (chat_bottom=748 vs cta_top=787.75, no overlap), shipping card collapsed by default (0 visible inputs) and expands to 2 inputs after clicking shipping-toggle. Donate modal opens from header, all preset/custom/anonymous/submit selectors are visible; anonymous checkbox hides name/message inputs; submitting fires POST /api/donate/checkout which returns a checkout_url.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_donations.py",
+    "/app/test_reports/pytest/iter3_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py now ~1280 lines (grew ~450 lines with stripe donations) — refactor into modules (donations.py, quote.py, chat.py, products.py) is now important for maintainability.",
+    "app.include_router(api_router) is called twice in server.py (line 1085 and line 1267). This works because donation routes are only registered on the router between the two include calls, but it means non-donation routes are registered twice on the app — cosmetic/perf noise. Consolidate to a single include after all routes are defined.",
+    "stripe_webhook falls back to accepting UNSIGNED JSON when STRIPE_WEBHOOK_SECRET is empty. This is fine for preview (and required for these tests), but should be flagged to only permit unsigned payloads in non-production or gated behind STRIPE_MODE=test to avoid accidental prod exposure.",
+    "DonateModal submits with package_id='custom' AND custom_amount_cents in payload; backend correctly branches on `req.package_id in DONATION_PRESETS_CENTS` (which excludes 'custom'), so it works, but sending package_id='custom' is semantically odd — consider setting package_id=None on the client when custom is selected.",
+    "_mark_donation_paid uses find_one_and_update with $ne:'paid' + supporters.upsert on session_id — idempotent verified. Good."
+  ],
+  "updated_files": ["/app/backend/tests/test_donations.py"],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "100% mobile UX checks passed"},
+  "test_credentials": "Donation flow is unauthed. No new credentials needed.",
+  "seed_data_creation": "Created several test payment_transactions and supporters rows via the donation endpoint + synthetic webhook. Rows have TEST_* names (TEST_Alice, TEST_SupporterHook, TEST_Pending, TEST_Idem_<ts>, TEST_Anonymous). No cleanup applied — supporters wall will show these on Home.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend + mobile UX for the Stripe donation feature is fully green. Regression test /app/backend/tests/test_donations.py can be reused (set REACT_APP_BACKEND_URL env var). If you need to prune seeded supporters, delete supporters + payment_transactions rows with names starting with TEST_ in mongo test_database.",
+  "rca of the issue": "N/A — no failures. Two initial test failures were due to incorrect test expectations (shipping/quotes is POST not GET; external search field is 'source_focus' not 'focus') and were fixed in the test file, not in product code."
+}

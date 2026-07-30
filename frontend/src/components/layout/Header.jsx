@@ -15,7 +15,7 @@ function loginWithGoogle() {
   window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
 }
 
-export default function Header({ onOpenContact, onOpenChat }) {
+export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -32,24 +32,25 @@ export default function Header({ onOpenContact, onOpenChat }) {
 
   return (
     <header className="sticky top-0 z-40 glass border-b border-forge-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between gap-2 sm:gap-6">
         <Link to="/" data-testid="logo-link" className="flex items-center gap-2 group shrink-0">
-          <div className="w-9 h-9 rounded-md bg-forge-primary flex items-center justify-center relative">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-forge-primary flex items-center justify-center relative">
             <div className="absolute inset-0 rounded-md animate-forge-pulse" />
-            <span className="font-display font-bold text-forge-bg text-lg">P</span>
+            <span className="font-display font-bold text-forge-bg text-base sm:text-lg">P</span>
           </div>
-          <div className="hidden xs:flex sm:flex flex-col leading-none">
+          <div className="hidden sm:flex flex-col leading-none">
             <span className="font-display font-semibold text-forge-text text-base sm:text-lg">PrintForge</span>
             <span className="font-mono text-[9px] tracking-[0.2em] text-forge-tech uppercase hidden sm:inline">3D · MARKETPLACE</span>
           </div>
         </Link>
 
-        {/* Upload — moved to the left, right after the logo */}
+        {/* Upload — visible on all breakpoints */}
         <Link to="/print" data-testid="header-upload-btn" className="shrink-0">
-          <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech px-3 sm:px-4">
-            <Upload className="w-4 h-4 sm:mr-2"/> <span className="hidden sm:inline">Upload</span>
+          <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech px-2.5 sm:px-4">
+            <Upload className="w-4 h-4 sm:mr-2"/><span className="hidden sm:inline">Upload</span>
           </Button>
         </Link>
+
         <nav className="hidden md:flex items-center gap-5 lg:gap-6">
           <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
           <NavLink to="/community" className={linkCls} data-testid="nav-community">{t("nav.community")}</NavLink>
@@ -76,27 +77,42 @@ export default function Header({ onOpenContact, onOpenChat }) {
             />
           </div>
         </form>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <a
-            href={process.env.REACT_APP_DONATE_URL || "https://www.buymeacoffee.com/printforge"}
-            target="_blank"
-            rel="noreferrer"
+
+        {/* Compact search — mobile only (grows to fill available space) */}
+        <form onSubmit={submitSearch} className="flex md:hidden flex-1 min-w-0" data-testid="header-search-form-mobile">
+          <div className="relative w-full">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-forge-muted pointer-events-none"/>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="w-full bg-forge-elevated border border-forge-border rounded-full pl-8 pr-3 py-1.5 text-xs text-forge-text placeholder:text-forge-faint focus:outline-none focus:border-forge-primary"
+              data-testid="header-search-input-mobile"
+            />
+          </div>
+        </form>
+
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => onOpenDonate?.()}
             data-testid="donate-btn"
             title="Support PrintForge"
-            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-forge-border bg-transparent text-forge-muted hover:text-forge-primary hover:border-forge-primary transition text-xs font-mono uppercase tracking-widest"
+            className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full border border-forge-primary/40 bg-forge-primary/10 text-forge-primary hover:bg-forge-primary hover:text-forge-bg transition text-xs font-mono uppercase tracking-widest"
           >
             <HandHeart className="w-3.5 h-3.5"/>
-            <span className="hidden xs:inline sm:inline">Donate</span>
-          </a>
+            <span className="hidden sm:inline">Donate</span>
+          </button>
           <div className="hidden sm:block"><LanguageSwitcher compact/></div>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-forge-elevated transition" data-testid="user-menu-trigger">
+                <button className="flex items-center gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg hover:bg-forge-elevated transition" data-testid="user-menu-trigger">
                   {user.picture ? (
-                    <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full border border-forge-border" />
+                    <img src={user.picture} alt={user.name} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-forge-border" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-forge-elevated flex items-center justify-center"><User className="w-4 h-4"/></div>
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-forge-elevated flex items-center justify-center"><User className="w-4 h-4"/></div>
                   )}
                   <span className="hidden sm:inline text-sm text-forge-text">{user.name?.split(" ")[0]}</span>
                 </button>
@@ -127,29 +143,17 @@ export default function Header({ onOpenContact, onOpenChat }) {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button className="btn-forge rounded-full px-5" onClick={loginWithGoogle} data-testid="login-btn">
-              <LogIn className="w-4 h-4 mr-2"/> {t("nav.signin")}
+            <Button className="btn-forge rounded-full px-3 sm:px-5 text-xs sm:text-sm" onClick={loginWithGoogle} data-testid="login-btn">
+              <LogIn className="w-4 h-4 sm:mr-2"/> <span className="hidden sm:inline">{t("nav.signin")}</span>
             </Button>
           )}
         </div>
       </div>
-      {/* Compact mobile nav strip + search */}
+
+      {/* Mobile tab strip — Home / Community / Contact only */}
       <div className="md:hidden border-t border-forge-border">
-        <form onSubmit={submitSearch} className="px-3 pt-2" data-testid="header-search-form-mobile">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-forge-muted pointer-events-none"/>
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search 3D models…"
-              className="w-full bg-forge-elevated border border-forge-border rounded-full pl-9 pr-3 py-1.5 text-sm text-forge-text placeholder:text-forge-faint focus:outline-none focus:border-forge-primary"
-              data-testid="header-search-input-mobile"
-            />
-          </div>
-        </form>
         <nav className="overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1 px-3 py-2 min-w-max">
+          <div className="flex items-center gap-1 px-3 py-1.5 min-w-max">
             {[
               { to: "/",          key: "marketplace" },
               { to: "/community", key: "community" },
@@ -159,7 +163,7 @@ export default function Header({ onOpenContact, onOpenChat }) {
                 to={item.to}
                 end={item.to === "/"}
                 className={({ isActive }) =>
-                  `whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition ${isActive ? "bg-forge-primary text-forge-bg" : "text-forge-muted hover:text-forge-text"}`
+                  `whitespace-nowrap px-3 py-1 rounded-full text-[11px] font-mono uppercase tracking-widest transition ${isActive ? "bg-forge-primary text-forge-bg" : "text-forge-muted hover:text-forge-text"}`
                 }
                 data-testid={`mnav-${item.key}`}
               >
@@ -168,7 +172,7 @@ export default function Header({ onOpenContact, onOpenChat }) {
             ))}
             <button
               onClick={() => onOpenContact?.()}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest text-forge-muted hover:text-forge-text transition"
+              className="whitespace-nowrap px-3 py-1 rounded-full text-[11px] font-mono uppercase tracking-widest text-forge-muted hover:text-forge-text transition"
               data-testid="mnav-contact"
             >
               Contact

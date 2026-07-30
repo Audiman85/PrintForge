@@ -14,7 +14,7 @@ export default function Footer({ onOpenContact }) {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-forge-tech font-mono mb-3">Explore</h4>
           <ul className="space-y-2 text-sm text-forge-muted">
-            <li><Link to="/" className="hover:text-forge-text">Marketplace</Link></li>
+            <li><Link to="/" className="hover:text-forge-text">Home</Link></li>
             <li><Link to="/search" className="hover:text-forge-text">Aggregated Search</Link></li>
             <li><Link to="/community" className="hover:text-forge-text">Community Designs</Link></li>
           </ul>
@@ -22,7 +22,6 @@ export default function Footer({ onOpenContact }) {
         <div>
           <h4 className="text-xs uppercase tracking-widest text-forge-tech font-mono mb-3">Services</h4>
           <ul className="space-y-2 text-sm text-forge-muted">
-            <li><Link to="/print" className="hover:text-forge-text">Send Files To Print</Link></li>
             <li><Link to="/dashboard" className="hover:text-forge-text">Your Dashboard</Link></li>
             <li><button onClick={() => onOpenContact?.()} className="hover:text-forge-text text-left" data-testid="footer-contact-btn">Contact Us</button></li>
           </ul>
