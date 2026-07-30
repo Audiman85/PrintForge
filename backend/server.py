@@ -1996,9 +1996,11 @@ async def admin_analytics(days: int = Query(30, ge=1, le=365), user=Depends(get_
     donation_count = 0
     async for d in db.payment_transactions.find({"purpose": "donation", "payment_status": "paid"}, {"_id": 0}):
         upd = d.get("updated_at")
-        if isinstance(upd, datetime) and upd >= cutoff:
-            donation_cents += int(d.get("amount_cents") or 0)
-            donation_count += 1
+        if isinstance(upd, datetime):
+            upd_aware = upd if upd.tzinfo else upd.replace(tzinfo=timezone.utc)
+            if upd_aware >= cutoff:
+                donation_cents += int(d.get("amount_cents") or 0)
+                donation_count += 1
 
     top_donors = []
     async for row in db.supporters.aggregate([
