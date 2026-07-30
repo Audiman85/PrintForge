@@ -186,6 +186,52 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Printer info at bottom */}
+      <PrinterInfoStrip/>
+    </div>
+  );
+}
+
+function PrinterInfoStrip() {
+  const [info, setInfo] = useState(null);
+  useEffect(() => {
+    (async () => { try { const { data } = await api.get("/printer"); setInfo(data); } catch {} })();
+  }, []);
+  if (!info) return null;
+  return (
+    <section className="mt-16 pt-8 border-t border-forge-border" data-testid="printer-info-strip">
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        <img src={info.image_url} alt={info.name} className="w-full md:w-72 h-48 object-cover rounded-xl border border-forge-border"/>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="scanline w-8"/>
+            <span className="font-mono text-xs uppercase tracking-widest text-forge-tech">Printed on</span>
+          </div>
+          <h2 className="font-display text-forge-text text-3xl mb-1">{info.name}</h2>
+          <p className="text-forge-muted text-sm mb-4">{info.model} · <span className="text-forge-primary font-mono">{info.colors}-colour</span> multi-material system</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 mb-4">
+            <SpecRow label="Build volume" value={`${info.build_volume_mm.x} × ${info.build_volume_mm.y} × ${info.build_volume_mm.z} mm`}/>
+            <SpecRow label="Max speed"    value={`${info.max_speed_mm_s} mm/s`}/>
+            <SpecRow label="Hotend"       value={`up to ${info.max_temp_hotend_c}°C`}/>
+            <SpecRow label="Heated bed"   value={`up to ${info.max_temp_bed_c}°C`}/>
+            <SpecRow label="Colours"      value={`${info.colors} filaments (AMS)`}/>
+            <SpecRow label="Materials"    value={info.supported_materials.slice(0,4).join(" · ") + (info.supported_materials.length > 4 ? "…" : "")}/>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {info.features.slice(0, 6).map(f => <span key={f} className="chip">{f}</span>)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SpecRow({ label, value }) {
+  return (
+    <div className="flex items-baseline justify-between border-b border-forge-border/40 py-1.5">
+      <span className="font-mono text-[10px] uppercase tracking-widest text-forge-muted">{label}</span>
+      <span className="font-display text-forge-text text-sm">{value}</span>
     </div>
   );
 }

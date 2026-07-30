@@ -9,16 +9,21 @@ import { useAuth } from "@/context/AuthContext";
 import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const CATEGORIES = ["all", "home", "art", "toys", "gaming"];
-
 export default function Home() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [wishlistIds, setWishlistIds] = useState(new Set());
   const [category, setCategory] = useState("all");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { t } = useTranslation();
+
+  useEffect(() => {
+    (async () => {
+      try { const { data } = await api.get("/categories"); setCategories(data); } catch {}
+    })();
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -132,17 +137,31 @@ export default function Home() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mb-8" data-testid="category-filters">
-          {CATEGORIES.map(c=>(
+          <button
+            onClick={()=>setCategory("all")}
+            data-testid="filter-all"
+            className={`px-4 py-2 rounded-full text-xs uppercase tracking-widest font-mono border transition ${category==="all" ? "bg-forge-primary text-forge-bg border-forge-primary" : "bg-forge-surface text-forge-muted border-forge-border hover:text-forge-text"}`}>
+            All
+          </button>
+          {categories.map(c=>(
             <button
-              key={c}
-              onClick={()=>setCategory(c)}
-              data-testid={`filter-${c}`}
-              className={`px-4 py-2 rounded-full text-xs uppercase tracking-widest font-mono border transition ${category===c ? "bg-forge-primary text-forge-bg border-forge-primary" : "bg-forge-surface text-forge-muted border-forge-border hover:text-forge-text"}`}>
-              {c}
+              key={c.code}
+              onClick={()=>setCategory(c.code)}
+              data-testid={`filter-${c.code}`}
+              title={c.desc}
+              className={`px-4 py-2 rounded-full text-xs uppercase tracking-widest font-mono border transition flex items-center gap-1.5 ${category===c.code ? "bg-forge-primary text-forge-bg border-forge-primary" : "bg-forge-surface text-forge-muted border-forge-border hover:text-forge-text"}`}>
+              {c.label}
+              {c.coming_soon && <span className="px-1.5 py-0.5 rounded bg-forge-tech/20 text-forge-tech text-[8px] tracking-widest">SOON</span>}
             </button>
           ))}
         </div>
-        {loading ? (
+
+        {/* Coming-soon banner replaces the grid when a coming-soon category is picked */}
+        {categories.find(c => c.code === category)?.coming_soon ? (
+          <ComingSoonCategory
+            category={categories.find(c => c.code === category)}
+          />
+        ) : loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_,i)=><div key={i} className="card-forge h-80 animate-pulse"/>) }
           </div>
@@ -181,6 +200,50 @@ export default function Home() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function ComingSoonCategory({ category }) {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+  return (
+    <div className="rounded-2xl border border-forge-border bg-forge-surface p-10 md:p-14 relative overflow-hidden noise-panel" data-testid="coming-soon-panel">
+      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-forge-primary/15 blur-3xl"/>
+      <div className="absolute -bottom-16 -left-10 w-56 h-56 rounded-full bg-forge-tech/10 blur-3xl"/>
+      <div className="relative max-w-2xl">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="chip chip-tech">COMING SOON</span>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-forge-muted">In the workshop</span>
+        </div>
+        <h3 className="font-display text-forge-text text-4xl mb-3">{category.label}</h3>
+        <p className="text-forge-muted mb-8 leading-relaxed">
+          {category.desc || "This catalog is being built."} We're prototyping the first designs on the AnyCubic Kobra S1 right now — sign up and we'll notify you the day it ships.
+        </p>
+        {subscribed ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-forge-primary/15 border border-forge-primary text-forge-primary font-mono text-sm" data-testid="coming-soon-subscribed">
+            You're on the list — we'll be in touch.
+          </div>
+        ) : (
+          <form
+            onSubmit={(e) => { e.preventDefault(); if (email) setSubscribed(true); }}
+            className="flex flex-col sm:flex-row gap-2 max-w-md"
+          >
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              className="flex-1 bg-forge-elevated border border-forge-border rounded-full px-4 py-2.5 text-sm text-forge-text placeholder:text-forge-faint focus:outline-none focus:border-forge-primary"
+              data-testid="coming-soon-email"
+            />
+            <button type="submit" className="btn-forge rounded-full px-5 py-2.5 text-sm" data-testid="coming-soon-notify">
+              Notify me
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

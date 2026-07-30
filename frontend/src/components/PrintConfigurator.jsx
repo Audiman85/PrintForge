@@ -14,9 +14,16 @@ const BLACK = "#111111";
 
 // Named colour swatches for "restricted" materials so the swatch reflects reality.
 const NAMED_COLORS = {
-  "Black": "#111111",
-  "White": "#EDEDED",
-  "Grey":  "#7A7A7F",
+  "Black":  "#111111",
+  "White":  "#EDEDED",
+  "Grey":   "#7A7A7F",
+  "Gray":   "#6B7280",
+  "Gold":   "#D4AF37",
+  "Silver": "#C0C0C0",
+  "Red":    "#DC2626",
+  "Green":  "#16A34A",
+  "Blue":   "#2563EB",
+  "Purple": "#8B5CF6",
 };
 
 export default function PrintConfigurator({ product, onQuoteChange }) {
@@ -27,6 +34,9 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
   const [nozzle, setNozzle] = useState(0.4);
   const [quantity, setQuantity] = useState(1);
   const [infill, setInfill] = useState(20);
+  const [colorMode, setColorMode] = useState(
+    (product.recommended_colors || 1) > 1 ? "model" : "single"
+  ); // "single" | "custom" | "model"
   const [colorCount, setColorCount] = useState(Math.max(1, product.recommended_colors || 1));
   const [colors, setColors] = useState(
     () => DEFAULT_PALETTE.slice(0, Math.max(1, product.recommended_colors || 1))
@@ -46,11 +56,18 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
 
   // Apply restriction when the material changes
   useEffect(() => {
-    if (restrictedTo && restrictedTo.length === 1) {
+    if (!restrictedTo) return;
+    if (restrictedTo.length === 1) {
       const only = restrictedTo[0];
-      const hex = NAMED_COLORS[only] || BLACK;
       setColorCount(1);
-      setColors([hex]);
+      setColors([NAMED_COLORS[only] || BLACK]);
+    } else {
+      // Restricted palette but multiple options — clamp existing colors into palette
+      const palette = restrictedTo.map(name => NAMED_COLORS[name] || BLACK);
+      setColors(prev => {
+        const next = prev.map(c => palette.includes(c) ? c : palette[0]);
+        return next.length ? next : [palette[0]];
+      });
     }
     // eslint-disable-next-line
   }, [material, restrictedTo?.length]);
@@ -215,37 +232,136 @@ export default function PrintConfigurator({ product, onQuoteChange }) {
           {/* Colours */}
           <div>
             <Label className="text-forge-text mb-2 block">Colours</Label>
-            <Select
-              value={String(colorCount)}
-              onValueChange={(v)=>setColorCount(Number(v))}
-              disabled={!!restrictedTo}
-            >
-              <SelectTrigger className="bg-forge-elevated border-forge-border text-forge-text disabled:opacity-60" data-testid="cfg-colors"><SelectValue/></SelectTrigger>
-              <SelectContent className="bg-forge-surface border-forge-border text-forge-text max-h-72">
-                {[1,2,3,4,5,6,7,8].map(n => (
-                  <SelectItem key={n} value={String(n)} data-testid={`colors-opt-${n}`}>
-                    {n} colour{n > 1 ? "s" : ""}
-                    {n === 1 ? " — single-colour print" : ` — multi-material (+${(n-1)*14}% + $${((n-1)*1.2).toFixed(2)})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-2 mt-3" data-testid="color-swatches">
-              {colors.map((c, i) => (
-                <label key={i} className={`relative group ${restrictedTo ? "cursor-not-allowed" : "cursor-pointer"}`} title={restrictedTo ? `Stocked colour: ${restrictedTo[0]}` : `Slot ${i+1}`}>
-                  <div className="w-10 h-10 rounded-lg border-2 border-forge-border" style={{background:c}}/>
-                  <span className="absolute -top-1 -left-1 font-mono text-[9px] text-forge-bg bg-forge-primary rounded-full w-4 h-4 flex items-center justify-center">{i+1}</span>
-                  <input
-                    type="color"
-                    value={c}
-                    onChange={(e)=>changeColor(i,e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                    disabled={!!restrictedTo}
-                    data-testid={`color-input-${i}`}
-                  />
-                </label>
+
+            {/* Colour mode chips */}
+            <div className="flex flex-wrap gap-2 mb-3" data-testid="color-mode">
+              {[
+                { code: "single", label: "Single colour", disabled: false },
+                { code: "custom", label: "Multiple colours", disabled: !!restrictedTo },
+                { code: "model",  label: "Model colours (no change)", disabled: false },
+              ].map(m => (
+                <button
+                  key={m.code}
+                  type="button"
+                  disabled={m.disabled}
+                  onClick={() => {
+                    setColorMode(m.code);
+                    if (m.code === "single") setColorCount(1);
+                    else if (m.code === "model") setColorCount(product.recommended_colors || 1);
+                  }}
+                  data-testid={`color-mode-${m.code}`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-mono uppercase tracking-widest border transition disabled:opacity-40 disabled:cursor-not-allowed ${colorMode === m.code ? "bg-forge-primary text-forge-bg border-forge-primary" : "bg-forge-elevated text-forge-muted border-forge-border hover:text-forge-text"}`}
+                >
+                  {m.label}
+                </button>
               ))}
             </div>
+
+            {colorMode === "model" && (
+              <div className="p-3 rounded-lg bg-forge-elevated border border-forge-border text-xs font-mono text-forge-muted flex items-start gap-2" data-testid="model-colors-note">
+                <Info className="w-3 h-3 mt-0.5 text-forge-tech shrink-0"/>
+                <span>Printed with the exact colours in the design — {product.recommended_colors || 1} material swap(s). No changes.</span>
+              </div>
+            )}
+
+            {colorMode !== "model" && (
+              <>
+                <Select
+                  value={String(colorCount)}
+                  onValueChange={(v)=>{ setColorCount(Number(v)); if (Number(v) > 1) setColorMode("custom"); else setColorMode("single"); }}
+                  disabled={restrictedTo && restrictedTo.length === 1}
+                >
+                  <SelectTrigger className="bg-forge-elevated border-forge-border text-forge-text disabled:opacity-60" data-testid="cfg-colors"><SelectValue/></SelectTrigger>
+                  <SelectContent className="bg-forge-surface border-forge-border text-forge-text max-h-72">
+                    {[1,2,3,4,5,6,7,8]
+                      .filter(n => !restrictedTo || n <= restrictedTo.length)
+                      .map(n => (
+                        <SelectItem key={n} value={String(n)} data-testid={`colors-opt-${n}`}>
+                          {n} colour{n > 1 ? "s" : ""}
+                          {n === 1 ? " — single-colour print" : ` — multi-material (+${(n-1)*14}% + $${((n-1)*1.2).toFixed(2)})`}
+                        </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Standard colour palette pickers (only when material is unrestricted) */}
+                {!restrictedTo && (
+                  <div className="mt-3 space-y-2" data-testid="standard-colors">
+                    <div className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">Standard stock colours</div>
+                    <div className="flex flex-wrap gap-2">
+                      {colors.map((c, i) => (
+                        <div key={i} className="flex flex-col items-center gap-1">
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-lg border-2 border-forge-border" style={{ background: c }}/>
+                            <span className="absolute -top-1 -left-1 font-mono text-[9px] text-forge-bg bg-forge-primary rounded-full w-4 h-4 flex items-center justify-center">{i+1}</span>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {STANDARD_COLORS.map(sc => (
+                              <button
+                                key={sc.name}
+                                type="button"
+                                title={sc.name}
+                                onClick={() => changeColor(i, sc.hex)}
+                                data-testid={`std-color-${i}-${sc.name.toLowerCase()}`}
+                                className={`w-3.5 h-3.5 rounded-full border transition ${c === sc.hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"}`}
+                                style={{ background: sc.hex }}
+                              />
+                            ))}
+                            <label className="w-3.5 h-3.5 rounded-full border border-forge-border/60 flex items-center justify-center bg-gradient-to-br from-red-500 via-yellow-400 to-blue-500 cursor-pointer hover:scale-110 transition" title="Custom colour">
+                              <input type="color" value={c} onChange={(e)=>changeColor(i, e.target.value)} className="opacity-0 absolute w-3.5 h-3.5" data-testid={`custom-color-${i}`}/>
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {restrictedTo && restrictedTo.length > 1 && (
+                  <div className="mt-3 space-y-2" data-testid="restricted-palette">
+                    <div className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">
+                      Available {material} colours ({restrictedTo.length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {colors.map((c, i) => (
+                        <div key={i} className="flex flex-col items-center gap-1">
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-lg border-2 border-forge-border" style={{ background: c }}/>
+                            <span className="absolute -top-1 -left-1 font-mono text-[9px] text-forge-bg bg-forge-primary rounded-full w-4 h-4 flex items-center justify-center">{i+1}</span>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {restrictedTo.map(name => {
+                              const hex = NAMED_COLORS[name] || BLACK;
+                              return (
+                                <button
+                                  key={name}
+                                  type="button"
+                                  title={name}
+                                  onClick={() => changeColor(i, hex)}
+                                  data-testid={`palette-${material}-${i}-${name.toLowerCase()}`}
+                                  className={`w-3.5 h-3.5 rounded-full border transition ${c === hex ? "border-forge-primary scale-125" : "border-forge-border/60 hover:scale-110"}`}
+                                  style={{ background: hex }}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[11px] font-mono text-forge-muted">
+                      Currently stocked: {restrictedTo.join(" · ")}. More colours coming soon.
+                    </p>
+                  </div>
+                )}
+
+                {restrictedTo && restrictedTo.length === 1 && (
+                  <div className="mt-3 flex items-center gap-2 text-xs font-mono text-forge-muted">
+                    <div className="w-10 h-10 rounded-lg border-2 border-forge-border" style={{ background: colors[0] }}/>
+                    <span>Stocked in <span className="text-forge-tech uppercase">{restrictedTo[0]}</span> only.</span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

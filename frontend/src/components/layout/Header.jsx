@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
-import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare } from "lucide-react";
+import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn, MessageSquare, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
@@ -89,6 +89,9 @@ export default function Header({ onOpenContact, onOpenChat }) {
                   <Package className="w-4 h-4 mr-2"/> {t("nav.orders")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/admin/products")} data-testid="menu-admin">
+                  <PackagePlus className="w-4 h-4 mr-2"/> Add / manage products
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onOpenChat?.()} data-testid="menu-chat">
                   <MessageSquare className="w-4 h-4 mr-2"/> Live chat
                 </DropdownMenuItem>

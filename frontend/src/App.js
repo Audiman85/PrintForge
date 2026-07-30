@@ -13,6 +13,7 @@ import PrintRequest from "@/pages/PrintRequest";
 import Community from "@/pages/Community";
 import Dashboard from "@/pages/Dashboard";
 import AuthCallback from "@/pages/AuthCallback";
+import AdminProducts from "@/pages/AdminProducts";
 import "@/i18n";
 
 function AppRouter() {
@@ -31,6 +32,7 @@ function AppRouter() {
           <Route path="/print" element={<PrintRequest />} />
           <Route path="/community" element={<Community />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin/products" element={<AdminProducts />} />
         </Routes>
       </main>
       <Footer onOpenContact={() => setContactOpen(true)} />

@@ -118,9 +118,12 @@ class ProductCreate(BaseModel):
     category: str
     price: float
     print_time_hours: float
+    print_weight_grams: float = 60.0
     material: str = "PLA"
     image_url: str
     tags: List[str] = []
+    preview_shape: str = "torusknot"
+    recommended_colors: int = 1
 
 class WishlistToggle(BaseModel):
     product_id: str
@@ -164,16 +167,16 @@ MATERIAL_PRICE_PER_GRAM = {
     "ASA":         0.085,
     "Carbon-PETG": 0.14,
 }
-# Colour availability per material. `null`/empty => full palette available.
+# Colour availability per material. `None` => full palette available.
 MATERIAL_COLORS = {
     "PLA":         None,
     "PETG":        None,
-    "ABS":         None,
+    "ABS":         ["Gray"],                                             # only gray currently stocked
     "TPU":         None,
-    "Silk-PLA":    None,
+    "Silk-PLA":    ["Gold", "Silver", "Red", "Green", "Blue", "Purple"], # multi-colour capable, limited palette
     "Carbon-PLA":  None,
-    "ASA":         ["Black"],           # currently only stocked in black
-    "Carbon-PETG": ["Black"],           # multi-material capable but only black stocked
+    "ASA":         ["Black"],                                            # only black currently stocked
+    "Carbon-PETG": ["Black"],                                            # multi-material capable but only black stocked
 }
 QUALITY_MULT = {"draft": 0.85, "regular": 1.00, "hi": 1.35}
 QUALITY_LAYER_MM = {"draft": 0.28, "regular": 0.20, "hi": 0.12}
@@ -296,6 +299,20 @@ async def auth_logout(response: Response, authorization: Optional[str] = Header(
     return {"ok": True}
 
 # ------------------------- Products -------------------------
+PRODUCT_CATEGORIES = [
+    {"code": "decor",       "label": "Decor",        "icon": "sparkles",  "desc": "Sculptures, lamps, planters, wall art"},
+    {"code": "fun_prints",  "label": "Fun Prints",   "icon": "smile",     "desc": "Minis, toys, articulated & tabletop"},
+    {"code": "flexy",       "label": "Flexy",        "icon": "waves",     "desc": "Print-in-place & flexible models"},
+    {"code": "useful",      "label": "Useful",       "icon": "wrench",    "desc": "Organizers, holders, everyday tools"},
+    {"code": "mechanical",  "label": "Mechanical",   "icon": "cog",       "desc": "Gears, brackets, functional CAD"},
+    {"code": "light_boxes", "label": "Light Boxes",  "icon": "lightbulb", "desc": "Backlit lithophane & LED display boxes", "coming_soon": True},
+]
+CATEGORY_CODES = {c["code"] for c in PRODUCT_CATEGORIES}
+
+@api_router.get("/categories")
+async def list_categories():
+    return PRODUCT_CATEGORIES
+
 @api_router.get("/products")
 async def list_products(q: Optional[str] = None, category: Optional[str] = None):
     query = {}
@@ -318,15 +335,48 @@ async def get_product(product_id: str):
     return doc
 
 @api_router.post("/products")
-async def create_product(payload: ProductCreate):
+async def create_product(payload: ProductCreate, user=Depends(get_current_user)):
+    if payload.category not in CATEGORY_CODES:
+        raise HTTPException(400, f"Category must be one of {sorted(CATEGORY_CODES)}")
     product_id = f"prod_{uuid.uuid4().hex[:10]}"
     doc = payload.model_dump()
     doc.update({
         "product_id": product_id,
+        "created_by": user["user_id"],
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
     await db.products.insert_one(doc)
     return {"product_id": product_id}
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str, user=Depends(get_current_user)):
+    res = await db.products.delete_one({"product_id": product_id})
+    if not res.deleted_count:
+        raise HTTPException(404, "Not found")
+    return {"ok": True}
+
+# ------------------------- Printer info -------------------------
+@api_router.get("/printer")
+async def printer_info():
+    return {
+        "name": os.environ.get("PRINTER_NAME", "AnyCubic Kobra S1"),
+        "model": os.environ.get("PRINTER_MODEL", "Kobra S1 Combo"),
+        "colors": int(os.environ.get("PRINTER_COLORS", "8")),
+        "build_volume_mm": {"x": 250, "y": 250, "z": 250},
+        "max_speed_mm_s": 600,
+        "max_temp_hotend_c": 320,
+        "max_temp_bed_c": 110,
+        "features": [
+            "8-colour Ace Pro AMS",
+            "600 mm/s CoreXY motion",
+            "AI-vision first-layer detection",
+            "Auto bed levelling",
+            "Enclosed heated chamber",
+            "Hardened steel nozzle (0.25 / 0.4 / 0.6 / 0.8mm)",
+        ],
+        "supported_materials": list(MATERIAL_PRICE_PER_GRAM.keys()),
+        "image_url": "https://images.unsplash.com/photo-1631700611307-37dbcb89ef7e?w=800",
+    }
 
 # ------------------------- Quote endpoint -------------------------
 @api_router.get("/quote/config")
@@ -775,15 +825,16 @@ async def download_file(path: str = Query(...)):
 
 # ------------------------- Seed products -------------------------
 SEED_PRODUCTS = [
-    {"title": "Articulated Dragon", "description": "Flexi print-in-place dragon with realistic scales. No supports required. Cinematic detail.", "category": "toys", "price": 24.0, "print_time_hours": 8.5, "print_weight_grams": 95, "preview_shape": "torusknot", "recommended_colors": 3, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=800", "tags": ["flexi", "dragon", "print-in-place"]},
-    {"title": "Modular Desk Organizer", "description": "Snap-together compartments for pens, cables and small tools. Stackable modules.", "category": "home", "price": 18.0, "print_time_hours": 5.0, "print_weight_grams": 140, "preview_shape": "box", "recommended_colors": 1, "material": "PETG", "image_url": "https://images.unsplash.com/photo-1748852458189-38b171a9e7ec?w=800", "tags": ["desk", "organizer", "modular"]},
-    {"title": "Low-Poly Fox Bust", "description": "Faceted geometric fox bust — a designer statement piece for shelves.", "category": "art", "price": 32.0, "print_time_hours": 6.0, "print_weight_grams": 110, "preview_shape": "icosahedron", "recommended_colors": 2, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1703221561813-cdaa308cf9e7?w=800", "tags": ["lowpoly", "art", "sculpture"]},
-    {"title": "Tabletop Terrain Tile Set", "description": "6-piece modular sci-fi terrain tiles for tabletop wargaming.", "category": "gaming", "price": 46.0, "print_time_hours": 14.0, "print_weight_grams": 220, "preview_shape": "octahedron", "recommended_colors": 4, "material": "PLA", "image_url": "https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["terrain", "wargaming", "modular"]},
-    {"title": "Cable Management Clips (x10)", "description": "Snap-on cable clips for standard desk edges. Clean cable routing in minutes.", "category": "home", "price": 8.0, "print_time_hours": 2.0, "print_weight_grams": 25, "preview_shape": "cylinder", "recommended_colors": 1, "material": "PETG", "image_url": "https://images.pexels.com/photos/30720501/pexels-photo-30720501.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["cables", "clip", "utility"]},
-    {"title": "Geometric Planter", "description": "Hexagonal succulent planter with drainage insert. Two-part print.", "category": "home", "price": 22.0, "print_time_hours": 4.5, "print_weight_grams": 130, "preview_shape": "dodecahedron", "recommended_colors": 2, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800", "tags": ["planter", "geometric", "plants"]},
-    {"title": "Miniature Knight (32mm)", "description": "Detailed 32mm knight miniature for tabletop RPG campaigns.", "category": "gaming", "price": 12.0, "print_time_hours": 3.0, "print_weight_grams": 18, "preview_shape": "cone", "recommended_colors": 5, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1611329695518-1763fc1fcf4d?w=800", "tags": ["mini", "rpg"]},
-    {"title": "Phone Stand — Adjustable", "description": "Tilt-adjustable phone stand with integrated cable pass-through.", "category": "home", "price": 14.0, "print_time_hours": 2.5, "print_weight_grams": 70, "preview_shape": "box", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1512446816042-444d641267d4?w=800", "tags": ["phone", "stand", "adjustable"]},
-    {"title": "Voronoi Lamp Shade", "description": "Organic voronoi lattice lamp shade. Diffuses warm light beautifully.", "category": "art", "price": 38.0, "print_time_hours": 12.0, "print_weight_grams": 180, "preview_shape": "sphere", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=800", "tags": ["lamp", "voronoi", "decor"]},
+    {"title": "Articulated Dragon", "description": "Flexi print-in-place dragon with realistic scales. No supports required. Cinematic detail.", "category": "flexy", "price": 24.0, "print_time_hours": 8.5, "print_weight_grams": 95, "preview_shape": "torusknot", "recommended_colors": 3, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=800", "tags": ["flexi", "dragon", "print-in-place"]},
+    {"title": "Modular Desk Organizer", "description": "Snap-together compartments for pens, cables and small tools. Stackable modules.", "category": "useful", "price": 18.0, "print_time_hours": 5.0, "print_weight_grams": 140, "preview_shape": "box", "recommended_colors": 1, "material": "PETG", "image_url": "https://images.unsplash.com/photo-1748852458189-38b171a9e7ec?w=800", "tags": ["desk", "organizer", "modular"]},
+    {"title": "Low-Poly Fox Bust", "description": "Faceted geometric fox bust — a designer statement piece for shelves.", "category": "decor", "price": 32.0, "print_time_hours": 6.0, "print_weight_grams": 110, "preview_shape": "icosahedron", "recommended_colors": 2, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1703221561813-cdaa308cf9e7?w=800", "tags": ["lowpoly", "art", "sculpture"]},
+    {"title": "Tabletop Terrain Tile Set", "description": "6-piece modular sci-fi terrain tiles for tabletop wargaming.", "category": "fun_prints", "price": 46.0, "print_time_hours": 14.0, "print_weight_grams": 220, "preview_shape": "octahedron", "recommended_colors": 4, "material": "PLA", "image_url": "https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["terrain", "wargaming", "modular"]},
+    {"title": "Cable Management Clips (x10)", "description": "Snap-on cable clips for standard desk edges. Clean cable routing in minutes.", "category": "useful", "price": 8.0, "print_time_hours": 2.0, "print_weight_grams": 25, "preview_shape": "cylinder", "recommended_colors": 1, "material": "PETG", "image_url": "https://images.pexels.com/photos/30720501/pexels-photo-30720501.jpeg?auto=compress&cs=tinysrgb&h=800", "tags": ["cables", "clip", "utility"]},
+    {"title": "Geometric Planter", "description": "Hexagonal succulent planter with drainage insert. Two-part print.", "category": "decor", "price": 22.0, "print_time_hours": 4.5, "print_weight_grams": 130, "preview_shape": "dodecahedron", "recommended_colors": 2, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800", "tags": ["planter", "geometric", "plants"]},
+    {"title": "Miniature Knight (32mm)", "description": "Detailed 32mm knight miniature for tabletop RPG campaigns.", "category": "fun_prints", "price": 12.0, "print_time_hours": 3.0, "print_weight_grams": 18, "preview_shape": "cone", "recommended_colors": 5, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1611329695518-1763fc1fcf4d?w=800", "tags": ["mini", "rpg"]},
+    {"title": "Phone Stand — Adjustable", "description": "Tilt-adjustable phone stand with integrated cable pass-through.", "category": "useful", "price": 14.0, "print_time_hours": 2.5, "print_weight_grams": 70, "preview_shape": "box", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1512446816042-444d641267d4?w=800", "tags": ["phone", "stand", "adjustable"]},
+    {"title": "Voronoi Lamp Shade", "description": "Organic voronoi lattice lamp shade. Diffuses warm light beautifully.", "category": "decor", "price": 38.0, "print_time_hours": 12.0, "print_weight_grams": 180, "preview_shape": "sphere", "recommended_colors": 1, "material": "PLA", "image_url": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=800", "tags": ["lamp", "voronoi", "decor"]},
+    {"title": "Planetary Gearbox Demo", "description": "Fully-functional planetary gearbox — print, assemble, and watch it spin. Great engineering demo.", "category": "mechanical", "price": 28.0, "print_time_hours": 6.5, "print_weight_grams": 120, "preview_shape": "torusknot", "recommended_colors": 2, "material": "PETG", "image_url": "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=800", "tags": ["gears", "mechanical", "engineering"]},
 ]
 
 @app.on_event("startup")
