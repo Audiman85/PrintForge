@@ -95,32 +95,9 @@ export default function Home() {
             </div>
           </div>
           <div className="lg:col-span-5 relative">
-            <div className="relative rounded-2xl overflow-hidden border border-forge-border" data-testid="hero-printer-card">
-              <img src="https://images.unsplash.com/photo-1631700611307-37dbcb89ef7e?w=800" alt="AnyCubic Kobra S1" className="w-full h-[520px] object-cover"/>
-              <div className="absolute inset-0 bg-gradient-to-t from-forge-bg via-forge-bg/40 to-transparent" />
-
-              {/* AnyCubic branded corner tag */}
-              <div className="absolute top-6 left-6 flex items-center gap-2 glass rounded-lg px-3 py-2">
-                <div className="w-8 h-8 rounded-md bg-gradient-to-br from-forge-tech to-forge-primary flex items-center justify-center font-display font-bold text-forge-bg text-sm">
-                  AC
-                </div>
-                <div>
-                  <div className="font-mono text-[8px] uppercase tracking-[0.2em] text-forge-muted leading-none">Powered by</div>
-                  <div className="font-display text-forge-text text-sm leading-tight">AnyCubic</div>
-                </div>
-              </div>
-
-              <div className="absolute top-6 right-6 chip chip-primary animate-forge-pulse"><Rocket className="w-3 h-3"/> LIVE</div>
-
-              {/* Model name pill */}
-              <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none">
-                <div className="glass rounded-full px-5 py-2 flex items-center gap-3">
-                  <span className="font-display font-semibold text-forge-text text-lg">Kobra S1</span>
-                  <span className="w-1 h-1 rounded-full bg-forge-primary animate-pulse"/>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">8-colour AMS</span>
-                </div>
-              </div>
-
+            <div className="relative rounded-2xl overflow-hidden border border-forge-border">
+              <img src="https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800" alt="3D printer" className="w-full h-[520px] object-cover"/>
+              <div className="absolute inset-0 bg-gradient-to-t from-forge-bg via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
                 <div className="glass rounded-lg px-4 py-3">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">Current Job</div>
@@ -131,20 +108,7 @@ export default function Home() {
                   <div className="font-mono text-forge-primary text-xl font-semibold">64%</div>
                 </div>
               </div>
-            </div>
-
-            {/* Spec strip below */}
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              {[
-                { l: "Speed", v: "600 mm/s" },
-                { l: "Colours", v: "8-filament" },
-                { l: "Chamber", v: "Heated" },
-              ].map((s, k) => (
-                <div key={k} className="card-forge p-3 text-center">
-                  <div className="font-mono text-[8px] uppercase tracking-widest text-forge-muted">{s.l}</div>
-                  <div className="font-display text-forge-text text-sm mt-0.5">{s.v}</div>
-                </div>
-              ))}
+              <div className="absolute top-6 right-6 chip chip-primary animate-forge-pulse"><Rocket className="w-3 h-3"/> LIVE</div>
             </div>
           </div>
         </div>
@@ -217,99 +181,6 @@ export default function Home() {
             ))}
           </div>
         )}
-      </section>
-
-      {/* ANYCUBIC KOBRA S1 SHOWCASE */}
-      <section className="max-w-7xl mx-auto px-6 py-14" data-testid="kobra-showcase">
-        <div className="grid lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-5 space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-md bg-gradient-to-br from-forge-tech to-forge-primary flex items-center justify-center font-display font-bold text-forge-bg text-lg">AC</div>
-              <div>
-                <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-forge-tech">AnyCubic · Official</div>
-                <div className="font-display text-forge-text text-lg leading-none">Our workshop printer</div>
-              </div>
-            </div>
-            <h2 className="font-display font-semibold text-forge-text text-4xl sm:text-5xl leading-tight">
-              Every print, forged on the<br/>
-              <span className="text-forge-primary">Kobra S1 Combo</span>
-            </h2>
-            <p className="text-forge-muted text-base leading-relaxed max-w-xl">
-              CoreXY motion at 600&nbsp;mm/s, an 8-filament Ace Pro AMS for true multi-material colour, AI vision monitoring, an enclosed heated chamber — the AnyCubic Kobra S1 is why we can hit tight tolerances and rich colour every time.
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              {[
-                { label: "Build volume", value: "250 × 250 × 250 mm" },
-                { label: "Max speed",    value: "600 mm/s" },
-                { label: "Hotend",       value: "320°C hardened" },
-                { label: "AMS",          value: "8-filament Ace Pro" },
-                { label: "Chamber",      value: "Enclosed · heated" },
-                { label: "Nozzles",      value: "0.25 / 0.4 / 0.6 / 0.8 mm" },
-              ].map((s, k) => (
-                <div key={k} className="card-forge p-3">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-forge-muted">{s.label}</div>
-                  <div className="font-display text-forge-text text-sm mt-0.5">{s.value}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              <span className="chip chip-primary">AI VISION</span>
-              <span className="chip chip-tech">COREXY 600mm/s</span>
-              <span className="chip">AUTO LEVELLING</span>
-              <span className="chip">HEATED CHAMBER</span>
-              <span className="chip">8-COLOUR AMS</span>
-            </div>
-          </div>
-
-          <div className="lg:col-span-7 relative">
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-forge-border" data-testid="kobra-image">
-              <img
-                src="https://images.unsplash.com/photo-1631700611307-37dbcb89ef7e?w=1200&q=80"
-                alt="AnyCubic Kobra S1"
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-forge-bg/70 via-forge-bg/10 to-transparent"/>
-              <div className="absolute inset-0 grain pointer-events-none opacity-50"/>
-
-              {/* Floating spec chips */}
-              <div className="absolute top-6 left-6 glass rounded-xl px-4 py-3">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">Model</div>
-                <div className="font-display text-forge-text text-xl leading-tight">Kobra S1 Combo</div>
-                <div className="font-mono text-[10px] text-forge-muted mt-1">AnyCubic · 2025 flagship</div>
-              </div>
-              <div className="absolute top-6 right-6 chip chip-primary animate-forge-pulse"><Rocket className="w-3 h-3"/> IN OUR SHOP</div>
-
-              <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-3">
-                {[
-                  { l: "PRINTING", v: "Layer 187 / 320" },
-                  { l: "TEMP",     v: "215°C · 65°C" },
-                  { l: "FILAMENT", v: "PLA · Silk Gold" },
-                ].map((s, k) => (
-                  <div key={k} className="glass rounded-lg px-3 py-2 flex-1 min-w-[140px]">
-                    <div className="font-mono text-[9px] uppercase tracking-widest text-forge-tech">{s.l}</div>
-                    <div className="font-display text-forge-text text-sm">{s.v}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Colour bar strip below */}
-            <div className="mt-3 flex items-center gap-1.5 p-3 rounded-xl card-forge">
-              <div className="font-mono text-[9px] uppercase tracking-widest text-forge-tech mr-2">AMS · 8 slots</div>
-              {[
-                "#DC2626", "#EDEDED", "#2563EB", "#16A34A",
-                "#D4AF37", "#C0C0C0", "#8B5CF6", "#111111"
-              ].map((c, k) => (
-                <div key={k} className="w-7 h-7 rounded-md border border-forge-border relative" style={{ background: c }} title={`Slot ${k + 1}`}>
-                  <span className="absolute -top-1.5 -left-1.5 font-mono text-[8px] text-forge-bg bg-forge-primary rounded-full w-3.5 h-3.5 flex items-center justify-center">{k + 1}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* MOBILE APP DOWNLOAD */}
@@ -425,7 +296,7 @@ function ComingSoonCategory({ category }) {
         </div>
         <h3 className="font-display text-forge-text text-4xl mb-3">{category.label}</h3>
         <p className="text-forge-muted mb-8 leading-relaxed">
-          {category.desc || "This catalog is being built."} We're prototyping the first designs on the AnyCubic Kobra S1 right now — sign up and we'll notify you the day it ships.
+          {category.desc || "This catalog is being built."} We're prototyping the first designs in our workshop right now — sign up and we'll notify you the day it ships.
         </p>
         {subscribed ? (
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-forge-primary/15 border border-forge-primary text-forge-primary font-mono text-sm" data-testid="coming-soon-subscribed">
