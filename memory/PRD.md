@@ -35,11 +35,13 @@
 10. Installable PWA + mobile sticky CTA + affiliate filament links
 
 ## Implemented (2026-02)
-- Backend endpoints: /auth/*, /products, /search/external, /wishlist, /orders, /designs, /files/download, /shipping/quotes, /chat/messages, /filament/stock, /filament/store-link
-- **Stripe donations (new)**: `POST /api/donate/checkout`, `GET /api/donate/status/{sid}`, `POST /api/stripe/webhook`, `GET /api/supporters`
-- Frontend routes: /, /search, /product/:id, /print, /community, /dashboard, /admin/products, /donate/success, /donate/cancel
-- **Donate Modal + Supporter Wall (new)**: $3/$5/$10 + custom, opt-in name + optional message, anonymous toggle
-- **Mobile UX pass (new)**: compact top-row search on mobile, Upload icon retained on mobile, Home/Community/Contact tab strip only, chat button raised to avoid sticky Add-to-cart overlap, shipping card now expandable/collapsible
+- Backend endpoints: /auth/*, /products, /search/external, /wishlist, /orders, /designs, /files/download (now serves inline for images with cache), /shipping/quotes, /chat/messages, /filament/stock, /filament/store-link
+- **Stripe donations**: `POST /api/donate/checkout`, `GET /api/donate/status/{sid}`, `POST /api/stripe/webhook`, `GET /api/supporters`
+- Frontend routes: /, /search, /product/:id, /print, /community, /dashboard, /admin/products, /donate/success, /donate/cancel, **/supporters**
+- **Donate Modal + Supporter Wall**: $3/$5/$10 + custom, opt-in name + optional message, anonymous toggle, opt-in appear on wall
+- **Dedicated /supporters page** (in main nav + mobile tab strip)
+- **Mobile UX pass**: compact top-row search on mobile, Upload button (with label) retained on mobile, unified header layout guest/authed (Sign-in button matches avatar footprint), Home/Community/Supporters/Contact tab strip, chat button raised to avoid sticky Add-to-cart overlap, shipping card is now expandable/collapsible
+- **Community photo fix**: /api/files/download serves images inline (was force-download) + client-side onError fallback
 - "Curated" copy replaced with "3D Marketplace" globally
 - Object Storage integration for print-order and design uploads
 - Multi-carrier shipping (11 carriers, best/fast/overnight badges)

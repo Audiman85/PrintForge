@@ -19,6 +19,7 @@ import AuthCallback from "@/pages/AuthCallback";
 import AdminProducts from "@/pages/AdminProducts";
 import DonateSuccess from "@/pages/DonateSuccess";
 import DonateCancel from "@/pages/DonateCancel";
+import Supporters from "@/pages/Supporters";
 import "@/i18n";
 
 function AppRouter() {
@@ -43,6 +44,7 @@ function AppRouter() {
           <Route path="/community" element={<Community />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />
+          <Route path="/supporters" element={<Supporters onOpenDonate={() => setDonateOpen(true)} />} />
           <Route path="/donate/success" element={<DonateSuccess />} />
           <Route path="/donate/cancel" element={<DonateCancel />} />
         </Routes>

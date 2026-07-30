@@ -74,7 +74,18 @@ export default function Community() {
           {designs.map(d => (
             <div key={d.design_id} className="card-forge overflow-hidden" data-testid={`design-${d.design_id}`}>
               <div className="aspect-[4/3] bg-forge-elevated relative overflow-hidden">
-                <img src={d.preview_path ? `${process.env.REACT_APP_BACKEND_URL}/api/files/download?path=${encodeURIComponent(d.preview_path)}` : "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=600"} alt={d.title} className="w-full h-full object-cover" loading="lazy"/>
+                <img
+                  src={d.preview_path ? `${process.env.REACT_APP_BACKEND_URL}/api/files/download?path=${encodeURIComponent(d.preview_path)}` : "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=600"}
+                  alt={d.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    if (!e.currentTarget.dataset.fallback) {
+                      e.currentTarget.dataset.fallback = "1";
+                      e.currentTarget.src = "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?w=600";
+                    }
+                  }}
+                />
                 <div className="absolute top-3 left-3"><span className="chip chip-tech">USER</span></div>
               </div>
               <div className="p-4 space-y-3">

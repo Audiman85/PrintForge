@@ -44,16 +44,17 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
           </div>
         </Link>
 
-        {/* Upload — visible on all breakpoints */}
+        {/* Upload — visible on all breakpoints, always with the word "Upload" */}
         <Link to="/print" data-testid="header-upload-btn" className="shrink-0">
-          <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech px-2.5 sm:px-4">
-            <Upload className="w-4 h-4 sm:mr-2"/><span className="hidden sm:inline">Upload</span>
+          <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech px-3 sm:px-4">
+            <Upload className="w-4 h-4 mr-1.5"/> Upload
           </Button>
         </Link>
 
         <nav className="hidden md:flex items-center gap-5 lg:gap-6">
           <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
           <NavLink to="/community" className={linkCls} data-testid="nav-community">{t("nav.community")}</NavLink>
+          <NavLink to="/supporters" className={linkCls} data-testid="nav-supporters">Supporters</NavLink>
           <button
             onClick={() => onOpenContact?.()}
             className="text-sm font-medium text-forge-text/80 hover:text-forge-text transition-colors"
@@ -143,8 +144,13 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button className="btn-forge rounded-full px-3 sm:px-5 text-xs sm:text-sm" onClick={loginWithGoogle} data-testid="login-btn">
-              <LogIn className="w-4 h-4 sm:mr-2"/> <span className="hidden sm:inline">{t("nav.signin")}</span>
+            <Button
+              onClick={loginWithGoogle}
+              data-testid="login-btn"
+              size="sm"
+              className="btn-forge rounded-full h-8 sm:h-9 px-3 sm:px-4 gap-1.5 text-xs sm:text-sm"
+            >
+              <LogIn className="w-4 h-4"/> <span className="hidden xs:inline sm:inline">{t("nav.signin")}</span>
             </Button>
           )}
         </div>
@@ -155,8 +161,9 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
         <nav className="overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-1 px-3 py-1.5 min-w-max">
             {[
-              { to: "/",          key: "marketplace" },
-              { to: "/community", key: "community" },
+              { to: "/",           key: "marketplace", label: t("nav.marketplace") },
+              { to: "/community",  key: "community",   label: t("nav.community") },
+              { to: "/supporters", key: "supporters",  label: "Supporters" },
             ].map(item => (
               <NavLink
                 key={item.key}
@@ -167,7 +174,7 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
                 }
                 data-testid={`mnav-${item.key}`}
               >
-                {t(`nav.${item.key}`)}
+                {item.label}
               </NavLink>
             ))}
             <button

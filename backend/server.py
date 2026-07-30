@@ -814,13 +814,18 @@ async def like_design(design_id: str, user=Depends(get_current_user)):
 
 # ------------------------- File download endpoint -------------------------
 @api_router.get("/files/download")
-async def download_file(path: str = Query(...)):
+async def download_file(path: str = Query(...), inline: bool = Query(False)):
     data, ctype = get_object(path)
     filename = path.rsplit("/", 1)[-1]
+    is_image = (ctype or "").startswith("image/")
+    disposition = "inline" if (inline or is_image) else "attachment"
     return FastAPIResponse(
         content=data,
         media_type=ctype,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers={
+            "Content-Disposition": f'{disposition}; filename="{filename}"',
+            "Cache-Control": "public, max-age=86400",
+        }
     )
 
 # ------------------------- Seed products -------------------------
