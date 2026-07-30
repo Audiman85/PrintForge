@@ -189,6 +189,28 @@ export default function ProductDetail() {
 
       {/* Printer info at bottom */}
       <PrinterInfoStrip/>
+
+      {/* Mobile sticky CTA */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-forge-border bg-forge-surface/95 backdrop-blur-md p-3 flex items-center gap-3" data-testid="mobile-sticky-cta">
+        <div className="flex-1 min-w-0">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-forge-muted leading-none">
+            {pricingMode === "fixed" ? "Fixed price" : "Custom quote"}
+          </div>
+          <div className="font-display text-forge-primary text-xl font-semibold leading-tight" data-testid="mobile-price">
+            ${grandTotal.toFixed(2)}
+          </div>
+          <div className="font-mono text-[9px] text-forge-muted truncate">
+            ${printSubtotal.toFixed(2)} print + ${shippingCost.toFixed(2)} shipping
+          </div>
+        </div>
+        <Link to={`/print?product=${p.product_id}&mode=${pricingMode}`}>
+          <Button className="btn-forge rounded-full px-5 py-5" data-testid="mobile-cta-order">
+            <Rocket className="w-4 h-4 mr-2"/> Add to cart
+          </Button>
+        </Link>
+      </div>
+      {/* Bottom spacer so content isn't hidden behind sticky bar on mobile */}
+      <div className="lg:hidden h-24"/>
     </div>
   );
 }

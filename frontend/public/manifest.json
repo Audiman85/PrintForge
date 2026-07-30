@@ -1,0 +1,16 @@
+{
+  "short_name": "PrintForge",
+  "name": "PrintForge — 3D Print Marketplace",
+  "description": "Discover print-ready 3D designs, search every major model site in one place, and send us files to print.",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#FF6B00",
+  "background_color": "#0A0A0C",
+  "categories": ["shopping", "productivity", "utilities"]
+}

@@ -1068,10 +1068,17 @@ async def filament_stock():
 
 @api_router.get("/filament/store-link")
 async def filament_store_link(material: str = Query("PLA")):
-    """Returns an AnyCubic (or configured) store URL for the given material."""
+    """Returns an AnyCubic (or configured) store URL for the given material.
+    Appends the shop owner's affiliate/referral code if set via FILAMENT_STORE_REF."""
     base = os.environ.get("FILAMENT_STORE_BASE", "https://www.anycubic.com/collections/filaments")
+    ref  = os.environ.get("FILAMENT_STORE_REF", "")
+    vendor = os.environ.get("FILAMENT_STORE_NAME", "AnyCubic")
     slug = material.lower().replace(" ", "-").replace("(", "").replace(")", "")
-    return {"material": material, "url": f"{base}?q={slug}", "vendor": os.environ.get("FILAMENT_STORE_NAME", "AnyCubic")}
+    url = f"{base}?q={slug}"
+    if ref:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}ref={ref}"
+    return {"material": material, "url": url, "vendor": vendor, "ref": ref or None}
 
 app.include_router(api_router)
 

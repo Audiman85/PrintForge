@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
+import { PwaProvider } from "@/context/PwaContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/ChatWidget";
@@ -45,10 +46,12 @@ function AppRouter() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRouter />
-        <Toaster position="top-right" theme="dark" richColors closeButton />
-      </BrowserRouter>
+      <PwaProvider>
+        <BrowserRouter>
+          <AppRouter />
+          <Toaster position="top-right" theme="dark" richColors closeButton />
+        </BrowserRouter>
+      </PwaProvider>
     </AuthProvider>
   );
 }

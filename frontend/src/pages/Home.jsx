@@ -6,8 +6,9 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight, Activity, MessageCircle, Heart, Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight, Activity, MessageCircle, Heart, Bell, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Link } from "react-router-dom";
+import { usePwa } from "@/context/PwaContext";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -18,6 +19,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { canInstall, install, isStandalone } = usePwa();
 
   useEffect(() => {
     (async () => {
@@ -202,7 +204,28 @@ export default function Home() {
                 Track live prints, chat with the maker, save designs on the move, and get restock alerts the second new filament lands. Free on iOS &amp; Android.
               </p>
 
-              <div className="flex flex-wrap gap-3 mb-6" data-testid="app-store-badges">
+              <div className="flex flex-wrap gap-3 mb-4" data-testid="app-store-badges">
+                <button
+                  type="button"
+                  onClick={canInstall ? install : undefined}
+                  disabled={isStandalone}
+                  data-testid="install-pwa-btn"
+                  className="relative inline-flex items-center gap-3 bg-forge-primary text-forge-bg px-5 py-3 rounded-xl hover:bg-forge-primaryHover transition disabled:opacity-70 disabled:cursor-default"
+                >
+                  <Download className="w-7 h-7"/>
+                  <div className="text-left">
+                    <div className="text-[10px] font-mono uppercase tracking-widest opacity-80 leading-none">
+                      {isStandalone ? "Already installed" : canInstall ? "Install now" : "Add to home screen"}
+                    </div>
+                    <div className="font-display text-lg leading-tight">
+                      {isStandalone ? "Open the app" : "Install Web App"}
+                    </div>
+                  </div>
+                  {!isStandalone && <span className="absolute -top-2 -right-2 chip chip-tech text-[9px]">FREE</span>}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-3 mb-4">
                 <button
                   type="button"
                   onClick={(e) => e.preventDefault()}
@@ -242,7 +265,7 @@ export default function Home() {
               </div>
 
               <p className="text-[11px] font-mono text-forge-muted uppercase tracking-widest mb-4">
-                Native apps are in the workshop — leave your email in <a href="/dashboard" className="text-forge-primary link-underline">your profile</a> and we'll ping you the day they land.
+                Install the web app today · native App Store &amp; Google Play editions coming soon
               </p>
 
               <div className="flex flex-wrap items-center gap-6 text-xs font-mono text-forge-muted">
