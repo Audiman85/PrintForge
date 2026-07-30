@@ -22,6 +22,8 @@ import DonateCancel from "@/pages/DonateCancel";
 import OrderSuccess from "@/pages/OrderSuccess";
 import Supporters from "@/pages/Supporters";
 import Profile from "@/pages/Profile";
+import RestockAdmin from "@/pages/RestockAdmin";
+import Tools from "@/pages/Tools";
 import "@/i18n";
 
 function AppRouter() {
@@ -44,8 +46,10 @@ function AppRouter() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/print" element={<PrintRequest />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/tools" element={<Tools />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />
+          <Route path="/admin/restock" element={<RestockAdmin />} />
           <Route path="/supporters" element={<Supporters onOpenDonate={() => setDonateOpen(true)} />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/donate/success" element={<DonateSuccess />} />

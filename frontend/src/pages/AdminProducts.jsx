@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Plus, PackageOpen, ImagePlus, Trash2, Sparkles, Calculator } from "lucide-react";
+import { Plus, PackageOpen, ImagePlus, Trash2, Sparkles, Calculator, Bell } from "lucide-react";
 import { toast } from "sonner";
 import ModelPreview from "@/components/ModelPreview";
 import ProductCalculator from "@/components/ProductCalculator";
@@ -108,9 +108,18 @@ export default function AdminProducts() {
           <h1 className="font-display font-semibold text-forge-text text-4xl">Manage Products</h1>
           <p className="text-forge-muted mt-2">Add new items to your catalog. Use the industry-standard calculator to set a fair retail price.</p>
         </div>
-        <a href="#calculator" className="inline-flex items-center gap-2 self-start px-4 py-2 rounded-full border border-forge-border bg-forge-elevated text-forge-text hover:border-forge-primary text-sm">
-          <Calculator className="w-4 h-4 text-forge-primary"/> Pricing calculator
-        </a>
+        <div className="flex flex-wrap gap-2 self-start">
+          <a href="#calculator" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-forge-border bg-forge-elevated text-forge-text hover:border-forge-primary text-sm" data-testid="admin-calc-link">
+            <Calculator className="w-4 h-4 text-forge-primary"/> Pricing calculator
+          </a>
+          <Link
+            to="/admin/restock"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-forge-border bg-forge-elevated text-forge-text hover:border-forge-primary text-sm"
+            data-testid="admin-restock-link"
+          >
+            <Bell className="w-4 h-4 text-forge-primary"/> Restock subscribers
+          </Link>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-5 gap-8">

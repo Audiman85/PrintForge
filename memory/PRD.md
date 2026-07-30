@@ -35,24 +35,26 @@
 10. Installable PWA + mobile sticky CTA + affiliate filament links
 
 ## Implemented (2026-02)
-- Backend endpoints: /auth/*, /products, /search/external, /wishlist, /orders, /designs, /files/download (now serves inline for images with cache), /shipping/quotes, /chat/messages, /filament/stock, /filament/store-link
-- **Stripe donations**: `POST /api/donate/checkout`, `GET /api/donate/status/{sid}`, `POST /api/stripe/webhook`, `GET /api/supporters`
-- **Stripe order checkout**: `POST /api/orders/checkout`, `GET /api/orders/status/{sid}` — one-tap Buy Now on product page with quote + shipping
-- **Supporter badge**: `GET /api/supporters/emails` + client-side badge on Community design cards for donors
-- **Restock alerts**: `POST /api/restock/subscribe`, `GET /api/restock/subscriptions` (admin), `POST /api/restock/notify` (admin) — uses Resend if `RESEND_API_KEY` set, otherwise queues in DB
-- **Bulk CSV product import**: `POST /api/products/bulk`, `GET /api/products/bulk/template`
-- Frontend routes: /, /search, /product/:id, /print, /community, /dashboard, /admin/products, /donate/success, /donate/cancel, **/supporters**, **/profile**, **/order/success**
-- **Donate Modal + Supporter Wall**: $3/$5/$10 + custom, opt-in name + optional message, anonymous toggle
-- **Dedicated /supporters page** (in main nav + mobile tab strip)
-- **Mobile UX pass**: compact top-row search on mobile, Upload button (with label) retained on mobile, unified header layout guest/authed, Home/Community/Supporters/Contact tab strip, chat button raised, shipping card expandable
+- Backend endpoints: /auth/*, /products (?include_archived), /search/external, /wishlist, /orders, /designs, /files/download (inline for images), /shipping/quotes (**now 28 carriers across USPS/UPS/FedEx/DHL/Amazon/OnTrac/LaserShip/Purolator/Canada Post/Royal Mail/Evri/Japan Post/Yamato/Aramex + bike + pickup**), /chat/messages, /filament/stock, /filament/store-link
+- **Stripe donations**: `POST /api/donate/checkout`, `GET /api/donate/status/{sid}`, `POST /api/stripe/webhook`, `GET /api/supporters`, `GET /api/supporters/emails`
+- **Stripe order checkout (server-verified quote)**: `POST /api/orders/checkout` re-computes the quote server-side and rejects any client-tampered totals (>1% & >$0.50 delta). `GET /api/orders/status/{sid}` powers the polling success page.
+- **Restock alerts**: `POST /api/restock/subscribe`, `GET /api/restock/subscriptions`, `GET /api/restock/stats` (per-material counts + colour breakdown), `POST /api/restock/notify` — sends via Resend when `RESEND_API_KEY` is set, otherwise queues in `restock_notifications`
+- **Email receipts**: on paid donation and paid print order — sends via Resend when key present, otherwise recorded in `receipts` collection with outcome=queued
+- **Bulk CSV import (CRUD)**: `POST /api/products/bulk` supports action column `create|update|archive|delete` (matched by title). Template now includes examples of each. Public `/products` hides archived by default; `?include_archived=1` reveals them.
+- Frontend routes: /, /search, /product/:id, /print, /community, /dashboard, /admin/products, /donate/success, /donate/cancel, /supporters, /profile, /order/success, **/admin/restock, /tools**
+- **Tools page (MakerLab)**: 16 curated MakerLab generators (Make My Sign, Make My Vase, Pixel Puzzle, Image→3D, Image→Keychain, Make My Statue, Relief Sculpture, AI Scanner, Lithophane, Photo Box, Stamp, Coin, Cookie Cutter, Badge, Colour Swatch, Ruler) with search + category filters + external MakerLab links; new "Tools" tab in header + mobile strip
+- **Restock Admin UI** at `/admin/restock`: per-material subscriber cards, click a colour or "Notify" button to open the notify form, sends alerts + queues if email not configured
+- **Buy Now with Stripe**: primary CTA on ProductDetail + mobile sticky, server-verified quote
+- **Restock Alert Modal**: bell icon on OOS filament swatches → subscribe modal
+- **Shipping section redesign**: compact expand/collapse card with country/postal, filter tabs (All/Cheap/Fast/Overnight/Eco), scrollable radio-list of every carrier, all badges (BEST/FAST/OVERNIGHT/ECO/INSURED), no horizontal overflow, "Extras" (signature + insurance) hidden by default
+- **Bulk CSV Upload**: drag-drop CSV in `/admin/products` with template download, per-row error report, action-aware summary (added/updated/archived/deleted counts)
+- **Supporter Badge**: chip next to community design authors who tipped
+- **Donate Modal + Supporter Wall**: presets $3/$5/$10 + custom, anonymous toggle
+- **Dedicated /supporters page** + Supporter Wall on Home
+- **Mobile UX pass**: compact top-row search, Upload button with label on mobile, unified header layout guest/authed, floating chat button raised to avoid sticky Add-to-cart overlap
 - **Community photo fix**: /api/files/download serves images inline + client-side onError fallback
-- **Buy Now with Stripe**: primary CTA on ProductDetail + mobile sticky, opens Stripe Checkout with quote + shipping total, redirects to /order/success
-- **Restock Alert Modal**: triggered by clicking an out-of-stock colour swatch in `PrintConfigurator`, subscribes email + material + colours
-- **Bulk CSV Upload**: drag-drop CSV in `/admin/products` with template download and per-row error report
-- **Supporter Badge**: chip shown next to community design authors who have donated
-- "Curated" copy replaced with "3D Marketplace" globally
-- Object Storage integration for print-order and design uploads
-- Multi-carrier shipping (11 carriers, best/fast/overnight badges)
+- "Curated" copy replaced with "3D Marketplace" globally; footer "Marketplace" → "Home"; "Send Files To Print" removed from footer
+- Object Storage for print-order and design uploads
 - 12-language i18n + GPT-5.2 translated real-time chat
 - PWA (installable web app) + install nudge + swipeable App screens carousel
 - AnyCubic affiliate filament stock signal + referral URLs

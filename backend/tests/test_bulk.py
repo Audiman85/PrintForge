@@ -29,11 +29,14 @@ class TestBulkImport:
         assert r.status_code == 401
 
     def test_bulk_import_ok(self, auth_headers):
-        # Use the template as the CSV payload
-        tmpl = requests.get(f"{BASE_URL}/api/products/bulk/template", timeout=15).text
-        # Rewrite titles so we can identify them
+        # Template now contains 2 create + 1 update + 1 archive rows.
+        # We build our own minimal CSV to remain deterministic.
         ts = int(time.time() * 1000)
-        csv = tmpl.replace("Voronoi Vase", f"TEST_Vase_{ts}").replace("Cable Comb", f"TEST_Comb_{ts}")
+        csv = (
+            "action,title,description,category,price,print_time_hours,print_weight_grams\n"
+            f"create,TEST_Vase_{ts},vase,decor,32.00,7.5,120\n"
+            f"create,TEST_Comb_{ts},comb,useful,9.50,1.8,20\n"
+        )
         files = {"file": ("import.csv", csv.encode("utf-8"), "text/csv")}
         r = requests.post(f"{BASE_URL}/api/products/bulk", headers=auth_headers, files=files, timeout=30)
         assert r.status_code == 200, r.text
@@ -64,7 +67,8 @@ class TestBulkImport:
         assert "not_a_real_category" in d["errors"][0]["error"]
 
     def test_missing_required_columns_400(self, auth_headers):
-        csv = "title,description\nX,Y\n"
+        # Only 'title' is required now — empty header row → 400
+        csv = "description\nY\n"
         files = {"file": ("mini.csv", csv.encode("utf-8"), "text/csv")}
         r = requests.post(f"{BASE_URL}/api/products/bulk", headers=auth_headers, files=files, timeout=15)
         assert r.status_code == 400

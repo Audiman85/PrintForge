@@ -314,8 +314,10 @@ async def list_categories():
     return PRODUCT_CATEGORIES
 
 @api_router.get("/products")
-async def list_products(q: Optional[str] = None, category: Optional[str] = None):
+async def list_products(q: Optional[str] = None, category: Optional[str] = None, include_archived: bool = False):
     query = {}
+    if not include_archived:
+        query["archived"] = {"$ne": True}
     if category and category != "all":
         query["category"] = category
     if q:
@@ -450,16 +452,39 @@ async def make_quote(payload: QuoteRequest):
 
 # ------------------------- Shipping quotes -------------------------
 CARRIERS = [
+    # USPS
     {"code": "usps_ground",       "name": "USPS Ground Advantage",   "flag_emoji": "USPS",   "days_min": 3,  "days_max": 5,  "base": 5.99,  "per_kg": 1.90, "per_extra_item": 0.50, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 460, "logo_bg": "#004B87", "note": "Best value for small parcels within US"},
+    {"code": "usps_priority",     "name": "USPS Priority Mail",      "flag_emoji": "USPS",   "days_min": 1,  "days_max": 3,  "base": 9.90,  "per_kg": 2.90, "per_extra_item": 0.70, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 470, "logo_bg": "#004B87", "note": "Free tracking + insurance"},
+    {"code": "usps_priority_exp", "name": "USPS Priority Mail Express","flag_emoji": "USPS", "days_min": 1,  "days_max": 2,  "base": 28.75, "per_kg": 5.30, "per_extra_item": 1.20, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 900, "logo_bg": "#004B87", "note": "Overnight to most US ZIPs"},
+    {"code": "usps_first_intl",   "name": "USPS First-Class International","flag_emoji": "USPS","days_min": 7,"days_max": 21, "base": 15.75, "per_kg": 4.60, "per_extra_item": 1.00, "tracked": False, "insured_up_to": 0,    "carbon_g_per_kg": 600, "logo_bg": "#004B87", "note": "Budget global shipping"},
+    # UPS
     {"code": "ups_ground",        "name": "UPS Ground",              "flag_emoji": "UPS",    "days_min": 3,  "days_max": 5,  "base": 8.50,  "per_kg": 2.40, "per_extra_item": 0.75, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 520, "logo_bg": "#5B3A1F", "note": "Reliable business ground"},
+    {"code": "ups_3day",          "name": "UPS 3 Day Select",        "flag_emoji": "UPS",    "days_min": 3,  "days_max": 3,  "base": 12.90, "per_kg": 3.40, "per_extra_item": 1.00, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 640, "logo_bg": "#5B3A1F", "note": "Guaranteed 3 business days"},
+    {"code": "ups_2nd_air",       "name": "UPS 2nd Day Air",         "flag_emoji": "UPS",    "days_min": 2,  "days_max": 2,  "base": 15.50, "per_kg": 4.30, "per_extra_item": 1.20, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 760, "logo_bg": "#5B3A1F", "note": "Business day count"},
+    {"code": "ups_next_air",      "name": "UPS Next Day Air Saver",  "flag_emoji": "UPS",    "days_min": 1,  "days_max": 1,  "base": 28.00, "per_kg": 7.80, "per_extra_item": 1.80, "tracked": True,  "insured_up_to": 1000, "carbon_g_per_kg": 1350,"logo_bg": "#5B3A1F", "note": "End-of-day next business day"},
+    {"code": "ups_worldwide",     "name": "UPS Worldwide Expedited", "flag_emoji": "UPS",    "days_min": 2,  "days_max": 5,  "base": 26.00, "per_kg": 6.90, "per_extra_item": 1.50, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 950, "logo_bg": "#5B3A1F", "note": "Global express with tracking"},
+    # FedEx
     {"code": "fedex_home",        "name": "FedEx Home Delivery",     "flag_emoji": "FDX",    "days_min": 2,  "days_max": 5,  "base": 9.20,  "per_kg": 2.60, "per_extra_item": 0.80, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 500, "logo_bg": "#4D148C", "note": "Includes Saturday delivery"},
     {"code": "fedex_2day",        "name": "FedEx 2Day",              "flag_emoji": "FDX",    "days_min": 2,  "days_max": 2,  "base": 16.00, "per_kg": 4.50, "per_extra_item": 1.20, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 780, "logo_bg": "#4D148C", "note": "Guaranteed 2 business days"},
-    {"code": "ups_2nd_air",       "name": "UPS 2nd Day Air",         "flag_emoji": "UPS",    "days_min": 2,  "days_max": 2,  "base": 15.50, "per_kg": 4.30, "per_extra_item": 1.20, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 760, "logo_bg": "#5B3A1F", "note": "Business day count"},
-    {"code": "usps_priority",     "name": "USPS Priority Mail",      "flag_emoji": "USPS",   "days_min": 1,  "days_max": 3,  "base": 9.90,  "per_kg": 2.90, "per_extra_item": 0.70, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 470, "logo_bg": "#004B87", "note": "Free tracking + insurance"},
     {"code": "fedex_overnight",   "name": "FedEx Overnight",         "flag_emoji": "FDX",    "days_min": 1,  "days_max": 1,  "base": 32.00, "per_kg": 8.20, "per_extra_item": 1.80, "tracked": True,  "insured_up_to": 1000, "carbon_g_per_kg": 1400,"logo_bg": "#4D148C", "note": "AM/PM slots"},
-    {"code": "ups_next_air",      "name": "UPS Next Day Air Saver",  "flag_emoji": "UPS",    "days_min": 1,  "days_max": 1,  "base": 28.00, "per_kg": 7.80, "per_extra_item": 1.80, "tracked": True,  "insured_up_to": 1000, "carbon_g_per_kg": 1350,"logo_bg": "#5B3A1F", "note": "End-of-day next business day"},
+    {"code": "fedex_intl_econ",   "name": "FedEx Intl Economy",      "flag_emoji": "FDX",    "days_min": 4,  "days_max": 7,  "base": 22.50, "per_kg": 5.80, "per_extra_item": 1.40, "tracked": True,  "insured_up_to": 300,  "carbon_g_per_kg": 700, "logo_bg": "#4D148C", "note": "Cheaper cross-border transit"},
+    # DHL
     {"code": "dhl_express",       "name": "DHL Express International","flag_emoji": "DHL",   "days_min": 2,  "days_max": 5,  "base": 22.00, "per_kg": 6.10, "per_extra_item": 1.50, "tracked": True,  "insured_up_to": 500,  "carbon_g_per_kg": 900, "logo_bg": "#D40511", "note": "Best for international"},
-    {"code": "local_courier",     "name": "Local Courier",           "flag_emoji": "LC",     "days_min": 0,  "days_max": 1,  "base": 12.00, "per_kg": 1.50, "per_extra_item": 0.30, "tracked": True,  "insured_up_to": 300,  "carbon_g_per_kg": 200, "logo_bg": "#FF6B00", "note": "Same-day within metro area"},
+    {"code": "dhl_ecommerce",     "name": "DHL eCommerce",           "flag_emoji": "DHL",    "days_min": 5,  "days_max": 12, "base": 11.00, "per_kg": 3.10, "per_extra_item": 0.90, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 560, "logo_bg": "#D40511", "note": "Budget worldwide delivery"},
+    # Regional & alt
+    {"code": "amazon_shipping",   "name": "Amazon Shipping",         "flag_emoji": "AMZ",    "days_min": 2,  "days_max": 3,  "base": 7.90,  "per_kg": 2.10, "per_extra_item": 0.60, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 480, "logo_bg": "#232F3E", "note": "Fast US ground via Amazon Logistics"},
+    {"code": "ontrac",            "name": "OnTrac",                  "flag_emoji": "OTC",    "days_min": 1,  "days_max": 3,  "base": 8.90,  "per_kg": 2.30, "per_extra_item": 0.70, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 500, "logo_bg": "#E11D48", "note": "West-coast focused ground"},
+    {"code": "lasership",         "name": "LaserShip",               "flag_emoji": "LSR",    "days_min": 1,  "days_max": 3,  "base": 7.90,  "per_kg": 2.00, "per_extra_item": 0.60, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 490, "logo_bg": "#0F172A", "note": "East-coast last-mile"},
+    {"code": "purolator",         "name": "Purolator Ground (CA)",   "flag_emoji": "PUR",    "days_min": 2,  "days_max": 6,  "base": 12.50, "per_kg": 3.60, "per_extra_item": 0.90, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 600, "logo_bg": "#DC2626", "note": "Canada domestic + cross-border"},
+    {"code": "canada_post",       "name": "Canada Post Expedited",   "flag_emoji": "CPC",    "days_min": 3,  "days_max": 7,  "base": 11.90, "per_kg": 3.20, "per_extra_item": 0.80, "tracked": True,  "insured_up_to": 100,  "carbon_g_per_kg": 550, "logo_bg": "#EF4444", "note": "Canada national coverage"},
+    {"code": "royal_mail",        "name": "Royal Mail Tracked 48",   "flag_emoji": "RM",     "days_min": 2,  "days_max": 3,  "base": 8.20,  "per_kg": 2.60, "per_extra_item": 0.60, "tracked": True,  "insured_up_to": 50,   "carbon_g_per_kg": 440, "logo_bg": "#B91C1C", "note": "UK domestic tracked"},
+    {"code": "evri_uk",           "name": "Evri Standard (UK)",      "flag_emoji": "EVRI",   "days_min": 2,  "days_max": 4,  "base": 5.90,  "per_kg": 1.80, "per_extra_item": 0.40, "tracked": True,  "insured_up_to": 25,   "carbon_g_per_kg": 400, "logo_bg": "#7C3AED", "note": "UK courier network — cheapest"},
+    {"code": "japan_post",        "name": "Japan Post EMS",          "flag_emoji": "JP",     "days_min": 3,  "days_max": 7,  "base": 26.00, "per_kg": 6.40, "per_extra_item": 1.30, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 850, "logo_bg": "#DC2626", "note": "Express to Japan + Asia"},
+    {"code": "yamato",            "name": "Yamato TA-Q-BIN",         "flag_emoji": "YMT",    "days_min": 1,  "days_max": 3,  "base": 14.00, "per_kg": 3.90, "per_extra_item": 0.90, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 500, "logo_bg": "#059669", "note": "Japan domestic parcel"},
+    {"code": "aramex",            "name": "Aramex International",    "flag_emoji": "ARX",    "days_min": 3,  "days_max": 7,  "base": 18.00, "per_kg": 4.80, "per_extra_item": 1.20, "tracked": True,  "insured_up_to": 300,  "carbon_g_per_kg": 780, "logo_bg": "#EA580C", "note": "MENA + global express"},
+    # Local & pickup
+    {"code": "local_courier",     "name": "Local Same-Day Courier",  "flag_emoji": "LC",     "days_min": 0,  "days_max": 1,  "base": 12.00, "per_kg": 1.50, "per_extra_item": 0.30, "tracked": True,  "insured_up_to": 300,  "carbon_g_per_kg": 200, "logo_bg": "#FF6B00", "note": "Same-day within metro area"},
+    {"code": "bike_courier",      "name": "Zero-Emission Bike Courier","flag_emoji": "BIKE", "days_min": 0,  "days_max": 1,  "base": 9.50,  "per_kg": 1.00, "per_extra_item": 0.20, "tracked": True,  "insured_up_to": 200,  "carbon_g_per_kg": 0,   "logo_bg": "#22C55E", "note": "Metro couriers by bicycle · zero CO₂"},
     {"code": "eco_pickup",        "name": "Store Pickup",            "flag_emoji": "PU",     "days_min": 0,  "days_max": 1,  "base": 0.00,  "per_kg": 0.00, "per_extra_item": 0.00, "tracked": False, "insured_up_to": 0,    "carbon_g_per_kg": 0,   "logo_bg": "#22C55E", "note": "Pick up from the maker lab — free"},
 ]
 
@@ -729,8 +754,65 @@ async def create_order(
 
 @api_router.get("/orders")
 async def list_my_orders(user=Depends(get_current_user)):
-    orders = await db.print_orders.find({"user_id": user["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    email = (user.get("email") or "").lower()
+    query = {"$or": [{"user_id": user["user_id"]}]}
+    if email:
+        query["$or"].append({"customer_email": email})
+    orders = await db.print_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
     return orders
+
+
+ORDER_STATUS_STEPS = ["pending_payment", "paid", "printing", "shipped", "delivered"]
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+    tracking_number: Optional[str] = None
+    carrier: Optional[str] = None
+    note: Optional[str] = None
+
+@api_router.post("/orders/{order_id}/status")
+async def update_order_status(order_id: str, req: OrderStatusUpdate, user=Depends(get_current_user)):
+    if req.status not in ORDER_STATUS_STEPS + ["cancelled"]:
+        raise HTTPException(400, f"Status must be one of {ORDER_STATUS_STEPS + ['cancelled']}")
+    order = await db.print_orders.find_one({"order_id": order_id})
+    if not order:
+        raise HTTPException(404, "Order not found")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    timeline_entry = {
+        "status": req.status,
+        "at": now_iso,
+        "tracking_number": req.tracking_number or None,
+        "carrier": req.carrier or None,
+        "note": req.note or None,
+    }
+    await db.print_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "status": req.status,
+            "updated_at": now_iso,
+            **({f"{req.status}_at": now_iso} if req.status not in order else {}),
+            **({"tracking_number": req.tracking_number} if req.tracking_number else {}),
+            **({"tracking_carrier": req.carrier} if req.carrier else {}),
+         },
+         "$push": {"status_timeline": timeline_entry}},
+    )
+    # Best-effort email nudge on shipped/delivered
+    if req.status in ("shipped", "delivered") and order.get("customer_email"):
+        subj = "Your order has shipped" if req.status == "shipped" else "Your order was delivered"
+        body = f"<p>Order <b>{order_id}</b> is now <b>{req.status}</b>.</p>"
+        if req.tracking_number:
+            body += f"<p>Tracking: <b>{req.tracking_number}</b>{f' via {req.carrier}' if req.carrier else ''}</p>"
+        outcome = _send_email(order["customer_email"], f"{RECEIPT_APP_NAME} · {subj} · {order_id}", body)
+        await db.receipts.insert_one({
+            "id": str(uuid.uuid4()),
+            "session_id": order.get("session_id"),
+            "purpose": "print_order_status",
+            "order_id": order_id,
+            "email": order.get("customer_email"),
+            "outcome": outcome,
+            "sent_at": now_iso,
+        })
+    return {"ok": True, "status": req.status, "timeline_entry": timeline_entry}
 
 # ------------------------- Design Uploads / Community Gallery -------------------------
 @api_router.post("/designs")
@@ -1097,6 +1179,66 @@ DONATION_PRESETS_CENTS = {"tip_3": 300, "tip_5": 500, "tip_10": 1000}
 DONATION_MIN_CENTS = 100
 DONATION_MAX_CENTS = 50000
 
+RESEND_API_KEY_EARLY = os.environ.get("RESEND_API_KEY", "")
+RESEND_FROM = os.environ.get("RESEND_FROM_EMAIL", "PrintForge <hello@printforge.dev>")
+RECEIPT_APP_NAME = "PrintForge"
+
+def _send_email(to: str, subject: str, html: str) -> str:
+    """Best-effort email via Resend. Returns 'sent'|'queued'|'skipped'."""
+    to = (to or "").strip()
+    if not to or "@" not in to:
+        return "skipped"
+    key = os.environ.get("RESEND_API_KEY", "")
+    if not key:
+        return "queued"
+    try:
+        r = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={"from": os.environ.get("RESEND_FROM_EMAIL", RESEND_FROM), "to": [to], "subject": subject, "html": html},
+            timeout=8,
+        )
+        return "sent" if r.status_code < 300 else "queued"
+    except Exception:
+        return "queued"
+
+def _receipt_html_donation(amount_cents: int, name: str = "", is_anonymous: bool = False) -> str:
+    display = "friend" if (is_anonymous or not name) else name
+    return f"""
+    <div style='font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;background:#0A0A0C;color:#F3E9DB;border-radius:16px'>
+      <div style='font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#F97316'>PrintForge Receipt</div>
+      <h1 style='font-family:Playfair Display,Georgia,serif;font-size:28px;margin:6px 0 8px'>Thank you, {display}.</h1>
+      <p style='color:#B7A99A;line-height:1.5'>Your <b style='color:#F97316'>${amount_cents/100:.2f}</b> tip just landed. It goes straight into filament, packaging, and printer maintenance.</p>
+      <p style='color:#B7A99A;font-size:13px'>You'll show up on the Supporter Wall unless you asked us to keep it anonymous.</p>
+      <hr style='border:none;border-top:1px solid #1F1F24;margin:20px 0'/>
+      <p style='color:#7A7A7F;font-size:11px'>PrintForge · https://design-forge-520.preview.emergentagent.com</p>
+    </div>
+    """
+
+def _receipt_html_order(order: dict, amount_cents: int) -> str:
+    title = (order.get("product_title") or "Custom Print")
+    order_id = (order.get("order_id") or "")
+    cfg = order.get("config") or {}
+    material = cfg.get("material") or "PLA"
+    qty = cfg.get("quantity") or 1
+    quality = cfg.get("quality") or "regular"
+    return f"""
+    <div style='font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;background:#0A0A0C;color:#F3E9DB;border-radius:16px'>
+      <div style='font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#F97316'>PrintForge Order Confirmation</div>
+      <h1 style='font-family:Playfair Display,Georgia,serif;font-size:26px;margin:6px 0 8px'>Order confirmed — we're printing.</h1>
+      <p style='color:#B7A99A'>Order <b style='color:#F3E9DB'>{order_id}</b> · <b style='color:#F97316'>${amount_cents/100:.2f}</b></p>
+      <table style='width:100%;border-collapse:collapse;margin-top:16px;color:#F3E9DB;font-size:14px'>
+        <tr><td style='padding:6px 0;color:#B7A99A'>Item</td><td style='padding:6px 0;text-align:right'>{title}</td></tr>
+        <tr><td style='padding:6px 0;color:#B7A99A'>Material · Qty</td><td style='padding:6px 0;text-align:right'>{material} · {qty}×</td></tr>
+        <tr><td style='padding:6px 0;color:#B7A99A'>Quality</td><td style='padding:6px 0;text-align:right'>{quality}</td></tr>
+        <tr><td style='padding:6px 0;color:#B7A99A'>Shipping</td><td style='padding:6px 0;text-align:right'>{order.get('shipping_carrier_code') or 'Standard'}</td></tr>
+      </table>
+      <p style='color:#B7A99A;font-size:13px;margin-top:16px'>We'll email you tracking once it ships. Reply anytime with questions.</p>
+      <hr style='border:none;border-top:1px solid #1F1F24;margin:20px 0'/>
+      <p style='color:#7A7A7F;font-size:11px'>PrintForge · https://design-forge-520.preview.emergentagent.com</p>
+    </div>
+    """
+
 class DonateCheckoutRequest(BaseModel):
     package_id: Optional[str] = None  # "tip_3" | "tip_5" | "tip_10" | "custom"
     custom_amount_cents: Optional[int] = None
@@ -1205,17 +1347,51 @@ async def _mark_donation_paid(session_id: str) -> Optional[dict]:
             }},
             upsert=True,
         )
+        # Email receipt (best-effort)
+        outcome = _send_email(
+            to=customer_email,
+            subject=f"Thanks for supporting {RECEIPT_APP_NAME}",
+            html=_receipt_html_donation(
+                amount_cents=int(result.get("amount_cents", 0)),
+                name=result.get("supporter_name") or "",
+                is_anonymous=bool(result.get("is_anonymous")),
+            ),
+        )
+        await db.receipts.insert_one({
+            "id": str(uuid.uuid4()),
+            "session_id": session_id,
+            "purpose": "donation",
+            "email": (customer_email or "").lower(),
+            "outcome": outcome,
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+        })
     elif result.get("purpose") == "print_order":
         # Promote the pending print_order into orders collection (idempotent)
         order_id = result.get("order_id")
         existing = await db.print_orders.find_one({"order_id": order_id})
         if existing:
+            new_email = (customer_email or existing.get("customer_email") or "").lower()
             await db.print_orders.update_one(
                 {"order_id": order_id},
                 {"$set": {"status": "paid",
                           "paid_at": datetime.now(timezone.utc).isoformat(),
-                          "customer_email": (customer_email or existing.get("customer_email") or "").lower()}},
+                          "customer_email": new_email}},
             )
+            fresh = await db.print_orders.find_one({"order_id": order_id})
+            outcome = _send_email(
+                to=new_email,
+                subject=f"{RECEIPT_APP_NAME} order confirmed · {order_id}",
+                html=_receipt_html_order(fresh or existing, int(result.get("amount_cents", 0))),
+            )
+            await db.receipts.insert_one({
+                "id": str(uuid.uuid4()),
+                "session_id": session_id,
+                "purpose": "print_order",
+                "order_id": order_id,
+                "email": new_email,
+                "outcome": outcome,
+                "sent_at": datetime.now(timezone.utc).isoformat(),
+            })
     return result
 
 
@@ -1353,7 +1529,37 @@ async def restock_subscriptions(user=Depends(get_current_user)):
             v = s.get(k)
             if isinstance(v, datetime):
                 s[k] = v.isoformat()
-    return {"subscriptions": subs, "count": len(subs), "email_provider_configured": bool(RESEND_API_KEY)}
+    return {"subscriptions": subs, "count": len(subs), "email_provider_configured": bool(os.environ.get("RESEND_API_KEY", ""))}
+
+
+@api_router.get("/restock/stats")
+async def restock_stats(user=Depends(get_current_user)):
+    """Per-material subscriber counts + colour breakdown for the admin dashboard."""
+    materials = {}
+    async for s in db.restock_subscriptions.find({"status": "active"}, {"_id": 0}):
+        m = s.get("material") or "Unknown"
+        entry = materials.setdefault(m, {"material": m, "subscribers": 0, "colours": {}, "emails": set()})
+        entry["subscribers"] += 1
+        entry["emails"].add(s.get("email"))
+        for c in (s.get("colors") or []):
+            entry["colours"][c] = entry["colours"].get(c, 0) + 1
+    out = []
+    for m, entry in materials.items():
+        out.append({
+            "material": m,
+            "subscribers": entry["subscribers"],
+            "unique_emails": len(entry["emails"]),
+            "colours": [{"name": k, "count": v} for k, v in sorted(entry["colours"].items(), key=lambda x: -x[1])],
+        })
+    out.sort(key=lambda x: -x["subscribers"])
+    total_subs = await db.restock_subscriptions.count_documents({"status": "active"})
+    recent_notifications = await db.restock_notifications.find({}, {"_id": 0}).sort("sent_at", -1).to_list(20)
+    return {
+        "materials": out,
+        "total_subscribers": total_subs,
+        "email_provider_configured": bool(os.environ.get("RESEND_API_KEY", "")),
+        "recent_notifications": recent_notifications,
+    }
 
 
 class RestockNotifyRequest(BaseModel):
@@ -1439,21 +1645,48 @@ async def bulk_import_products(
     import csv as _csv, io as _io
     text = raw.decode("utf-8-sig", errors="ignore")
     reader = _csv.DictReader(_io.StringIO(text))
-    required = {"title", "description", "category", "price", "print_time_hours", "print_weight_grams"}
+    required = {"title"}
     missing = required - {(h or "").strip() for h in (reader.fieldnames or [])}
     if missing:
         raise HTTPException(400, f"Missing required columns: {', '.join(sorted(missing))}")
-    inserted, skipped, errors = [], [], []
+    inserted, updated, archived, deleted, errors = [], [], [], [], []
     for i, row in enumerate(reader, start=2):
         try:
-            category = (row.get("category") or "").strip().lower()
-            if category not in CATEGORY_CODES:
-                errors.append({"row": i, "error": f"Category '{category}' not in {sorted(CATEGORY_CODES)}"})
-                continue
+            action = (row.get("action") or "create").strip().lower()
             title = (row.get("title") or "").strip()
             if not title:
                 errors.append({"row": i, "error": "Empty title"})
                 continue
+
+            if action in ("archive", "unarchive"):
+                res = await db.products.update_many(
+                    {"title": title},
+                    {"$set": {"archived": (action == "archive"),
+                              "updated_at": datetime.now(timezone.utc).isoformat()}},
+                )
+                (archived if action == "archive" else updated).extend([title] * res.modified_count)
+                continue
+
+            if action == "delete":
+                res = await db.products.delete_many({"title": title})
+                deleted.extend([title] * res.deleted_count)
+                continue
+
+            # For create/update we need the full row (or partial for update)
+            category_raw = (row.get("category") or "").strip().lower()
+            if action == "create":
+                for k in ("description", "category", "price", "print_time_hours", "print_weight_grams"):
+                    if not (row.get(k) or "").strip():
+                        errors.append({"row": i, "error": f"Missing required column for create: {k}"})
+                        raise ValueError("skip")
+                if category_raw and category_raw not in CATEGORY_CODES:
+                    errors.append({"row": i, "error": f"Category '{category_raw}' not in {sorted(CATEGORY_CODES)}"})
+                    continue
+            elif action == "update":
+                if category_raw and category_raw not in CATEGORY_CODES:
+                    errors.append({"row": i, "error": f"Category '{category_raw}' not in {sorted(CATEGORY_CODES)}"})
+                    continue
+
             def _f(k, dflt):
                 v = (row.get(k) or "").strip()
                 return float(v) if v else dflt
@@ -1461,31 +1694,56 @@ async def bulk_import_products(
                 v = (row.get(k) or "").strip()
                 return int(float(v)) if v else dflt
             tags_raw = (row.get("tags") or "").strip()
-            tags = [t.strip() for t in tags_raw.split("|")] if tags_raw else []
-            doc = {
-                "product_id": f"prod_{uuid.uuid4().hex[:10]}",
+            tags = [t.strip() for t in tags_raw.split("|")] if tags_raw else None
+
+            fields = {
                 "title": title,
-                "description": (row.get("description") or "").strip(),
-                "category": category,
-                "price": _f("price", 0.0),
-                "print_time_hours": _f("print_time_hours", 0.0),
-                "print_weight_grams": _i("print_weight_grams", 0),
-                "preview_shape": (row.get("preview_shape") or "box").strip(),
-                "recommended_colors": _i("recommended_colors", 1),
-                "material": (row.get("material") or "PLA").strip(),
-                "image_url": (row.get("image_url") or "").strip(),
+                "description": (row.get("description") or "").strip() or None,
+                "category": category_raw or None,
+                "price": _f("price", None) if (row.get("price") or "").strip() else None,
+                "print_time_hours": _f("print_time_hours", None) if (row.get("print_time_hours") or "").strip() else None,
+                "print_weight_grams": _i("print_weight_grams", None) if (row.get("print_weight_grams") or "").strip() else None,
+                "preview_shape": (row.get("preview_shape") or "").strip() or None,
+                "recommended_colors": _i("recommended_colors", None) if (row.get("recommended_colors") or "").strip() else None,
+                "material": (row.get("material") or "").strip() or None,
+                "image_url": (row.get("image_url") or "").strip() or None,
                 "tags": tags,
-                "created_by": user["user_id"],
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "imported_from_csv": True,
             }
-            await db.products.insert_one(doc)
-            inserted.append(doc["product_id"])
+            fields = {k: v for k, v in fields.items() if v is not None}
+
+            if action == "update":
+                fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+                res = await db.products.update_many({"title": title}, {"$set": fields})
+                if res.matched_count == 0:
+                    errors.append({"row": i, "error": f"No product with title '{title}' to update"})
+                else:
+                    updated.extend([title] * res.modified_count)
+            else:  # create
+                fields.setdefault("category", category_raw)
+                fields.setdefault("preview_shape", "box")
+                fields.setdefault("recommended_colors", 1)
+                fields.setdefault("material", "PLA")
+                fields.setdefault("image_url", "")
+                fields.setdefault("tags", [])
+                doc = {
+                    "product_id": f"prod_{uuid.uuid4().hex[:10]}",
+                    **fields,
+                    "created_by": user["user_id"],
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "imported_from_csv": True,
+                    "archived": False,
+                }
+                await db.products.insert_one(doc)
+                inserted.append(doc["product_id"])
+        except ValueError:
+            continue
         except Exception as e:
             errors.append({"row": i, "error": str(e)})
     return {
         "inserted": len(inserted),
-        "skipped": len(skipped),
+        "updated": len(updated),
+        "archived": len(archived),
+        "deleted": len(deleted),
         "errors": errors,
         "product_ids": inserted,
     }
@@ -1494,9 +1752,11 @@ async def bulk_import_products(
 @api_router.get("/products/bulk/template")
 async def bulk_template():
     tmpl = (
-        "title,description,category,price,print_time_hours,print_weight_grams,preview_shape,recommended_colors,material,image_url,tags\n"
-        "Voronoi Vase,\"Organic vase for dry flowers\",decor,32.00,7.5,120,sphere,1,PLA,https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800,vase|voronoi|decor\n"
-        "Cable Comb,\"Snap-on cable manager (x10)\",useful,9.50,1.8,20,cylinder,1,PETG,,cable|utility\n"
+        "action,title,description,category,price,print_time_hours,print_weight_grams,preview_shape,recommended_colors,material,image_url,tags\n"
+        "create,Voronoi Vase,\"Organic vase for dry flowers\",decor,32.00,7.5,120,sphere,1,PLA,https://images.unsplash.com/photo-1602928321679-560bb453f190?w=800,vase|voronoi|decor\n"
+        "create,Cable Comb,\"Snap-on cable manager (x10)\",useful,9.50,1.8,20,cylinder,1,PETG,,cable|utility\n"
+        "update,Voronoi Vase,,,,,,,,,,vase|voronoi|decor|updated\n"
+        "archive,Cable Comb,,,,,,,,,,\n"
     )
     return FastAPIResponse(
         content=tmpl,
@@ -1519,16 +1779,61 @@ class OrderCheckoutRequest(BaseModel):
     contact_name: Optional[str] = None
 
 @api_router.post("/orders/checkout")
-async def orders_checkout(req: OrderCheckoutRequest):
-    if req.quote_total_cents <= 0:
-        raise HTTPException(400, "Invalid quote total")
+async def orders_checkout(req: OrderCheckoutRequest, user=Depends(get_current_user_optional)):
     if req.shipping_price_cents < 0:
         raise HTTPException(400, "Invalid shipping price")
-    total_cents = int(req.quote_total_cents) + int(req.shipping_price_cents)
     product = await db.products.find_one({"product_id": req.product_id}, {"_id": 0})
     if not product:
         raise HTTPException(404, "Product not found")
 
+    # ---- Server-verified quote ----
+    cfg = req.config or {}
+    pricing_mode = str(cfg.get("pricing_mode") or "quote").lower()
+    quantity = int(cfg.get("quantity") or 1)
+    quantity = max(1, min(50, quantity))
+    if pricing_mode == "fixed":
+        base_price = float(product.get("price") or 0)
+        if base_price <= 0:
+            raise HTTPException(400, "Product has no fixed price configured")
+        server_quote_cents = int(round(base_price * 100 * quantity))
+    else:
+        try:
+            material = str(cfg.get("material") or "PLA")
+            quality = str(cfg.get("quality") or "regular")
+            nozzle_mm = float(cfg.get("nozzle_mm") or 0.4)
+            colors = int(cfg.get("colors") if isinstance(cfg.get("colors"), int) else len(cfg.get("colors") or []) or 1)
+            colors = max(1, min(8, colors))
+            infill_pct = int(cfg.get("infill_pct") or 20)
+            infill_pct = max(5, min(100, infill_pct))
+            weight = float(product.get("print_weight_grams") or 60.0)
+            time_h = float(product.get("print_time_hours") or max(0.5, weight / 12.0))
+            q = compute_quote(
+                weight_grams=weight,
+                print_time_hours=time_h,
+                material=material,
+                quality=quality,
+                nozzle_mm=nozzle_mm,
+                colors=colors,
+                quantity=quantity,
+                infill_pct=infill_pct,
+            )
+            server_quote_cents = int(round(float(q.get("total_price") or 0) * 100))
+        except Exception as e:
+            logger.exception("Quote re-derivation failed")
+            raise HTTPException(400, f"Could not verify quote: {e}")
+
+    if server_quote_cents <= 0:
+        raise HTTPException(400, "Server-computed quote is zero — configuration invalid")
+
+    # Fail closed if client asked for something materially different (>1% AND >$0.50)
+    if req.quote_total_cents:
+        delta = abs(server_quote_cents - int(req.quote_total_cents))
+        if delta > 50 and delta > server_quote_cents * 0.01:
+            raise HTTPException(400,
+                f"Quote mismatch — the server calculated ${server_quote_cents/100:.2f}, "
+                f"the client sent ${int(req.quote_total_cents)/100:.2f}. Refresh the configurator and try again.")
+
+    total_cents = server_quote_cents + int(req.shipping_price_cents)
     order_id = f"ord_{uuid.uuid4().hex[:10]}"
     metadata = {
         "purpose": "print_order",
@@ -1536,17 +1841,17 @@ async def orders_checkout(req: OrderCheckoutRequest):
         "product_id": req.product_id,
         "product_title": (product.get("title") or "")[:80],
         "carrier": (req.shipping_carrier_code or "")[:24],
-        "quote_cents": str(req.quote_total_cents),
+        "quote_cents": str(server_quote_cents),
         "shipping_cents": str(req.shipping_price_cents),
     }
     line_items = [
         {
             "price_data": {
                 "currency": "usd",
-                "unit_amount": int(req.quote_total_cents),
+                "unit_amount": server_quote_cents,
                 "product_data": {
                     "name": product.get("title") or "3D Print Order",
-                    "description": f"{product.get('title')} · {req.config.get('material','PLA')} · {req.config.get('quantity',1)}× · Quality {req.config.get('quality','regular')}",
+                    "description": f"{product.get('title')} · {cfg.get('material','PLA')} · {quantity}× · Quality {cfg.get('quality','regular')}",
                 },
             },
             "quantity": 1,
@@ -1593,21 +1898,28 @@ async def orders_checkout(req: OrderCheckoutRequest):
     await db.print_orders.insert_one({
         "order_id": order_id,
         "session_id": session.id,
+        "user_id": (user or {}).get("user_id"),
         "product_id": req.product_id,
         "product_title": product.get("title"),
-        "customer_email": (req.contact_email or "").lower(),
-        "customer_name": req.contact_name or "",
-        "config": req.config,
+        "customer_email": (req.contact_email or (user or {}).get("email") or "").lower(),
+        "customer_name": req.contact_name or (user or {}).get("name") or "",
+        "config": cfg,
         "shipping_carrier_code": req.shipping_carrier_code,
         "shipping_country": req.shipping_country,
         "shipping_postal": req.shipping_postal,
-        "quote_cents": int(req.quote_total_cents),
+        "quote_cents": server_quote_cents,
         "shipping_cents": int(req.shipping_price_cents),
         "total_cents": total_cents,
         "status": "pending_payment",
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
-    return {"checkout_url": session.url, "session_id": session.id, "order_id": order_id, "amount_cents": total_cents}
+    return {
+        "checkout_url": session.url,
+        "session_id": session.id,
+        "order_id": order_id,
+        "amount_cents": total_cents,
+        "server_quote_cents": server_quote_cents,
+    }
 
 
 @api_router.get("/orders/status/{session_id}")

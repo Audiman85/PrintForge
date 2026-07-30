@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ProductCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Package, FileBox, Upload, ArrowUpRight, Clock, UserCircle } from "lucide-react";
+import { Heart, Package, FileBox, Upload, ArrowUpRight, Clock, UserCircle, CheckCircle2, Circle, Printer, Truck, Home as HomeIcon, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SocialsProfile from "@/components/SocialsProfile";
 import ShareButtons from "@/components/ShareButtons";
@@ -179,20 +179,118 @@ function MiniProductRow({ product }) {
 }
 
 function OrderRow({ order, full }) {
-  const date = new Date(order.created_at).toLocaleDateString();
-  return (
-    <div className={`${full ? "card-forge p-5" : "p-3 rounded-lg hover:bg-forge-elevated"} flex items-center justify-between gap-4`}>
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-10 h-10 rounded bg-forge-elevated flex items-center justify-center"><FileBox className="w-5 h-5 text-forge-primary"/></div>
-        <div className="min-w-0">
-          <p className="font-mono text-forge-primary text-sm">{order.order_id}</p>
-          <p className="text-xs text-forge-muted truncate">{order.original_filename || "Catalog item"} · {order.material} · {order.color} · Qty {order.quantity}</p>
+  const date = new Date(order.created_at || order.paid_at || Date.now()).toLocaleDateString();
+  const cfg = order.config || {};
+  const filename = order.original_filename || order.product_title || "Catalog item";
+  const material = order.material || cfg.material || "PLA";
+  const colors = order.color
+    || (Array.isArray(cfg.colors) ? cfg.colors.filter(Boolean).slice(0, 2).join(" / ") : "")
+    || "—";
+  const qty = order.quantity || cfg.quantity || 1;
+  const status = (order.status || "pending_payment").toLowerCase();
+
+  if (!full) {
+    return (
+      <div className="p-3 rounded-lg hover:bg-forge-elevated flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded bg-forge-elevated flex items-center justify-center"><FileBox className="w-5 h-5 text-forge-primary"/></div>
+          <div className="min-w-0">
+            <p className="font-mono text-forge-primary text-sm truncate">{order.order_id}</p>
+            <p className="text-xs text-forge-muted truncate">{filename} · {material} · Qty {qty}</p>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <span className="chip chip-tech uppercase text-[10px]">{status.replace("_", " ")}</span>
+          <p className="text-xs text-forge-muted font-mono mt-1 flex items-center gap-1 justify-end"><Clock className="w-3 h-3"/>{date}</p>
         </div>
       </div>
-      <div className="text-right shrink-0">
-        <span className="chip chip-tech uppercase">{order.status}</span>
-        <p className="text-xs text-forge-muted font-mono mt-1 flex items-center gap-1"><Clock className="w-3 h-3"/>{date}</p>
+    );
+  }
+  return <OrderTimelineCard order={order} filename={filename} material={material} colors={colors} qty={qty} status={status} date={date}/>;
+}
+
+const TIMELINE_STEPS = [
+  { key: "pending_payment", label: "Pending",   short: "Payment",  Icon: Circle },
+  { key: "paid",            label: "Paid",      short: "Confirmed",Icon: CheckCircle2 },
+  { key: "printing",        label: "Printing",  short: "In lab",   Icon: Printer },
+  { key: "shipped",         label: "Shipped",   short: "On the way",Icon: Truck },
+  { key: "delivered",       label: "Delivered", short: "At your door", Icon: HomeIcon },
+];
+
+function OrderTimelineCard({ order, filename, material, colors, qty, status, date }) {
+  const stepIndex = Math.max(0, TIMELINE_STEPS.findIndex(s => s.key === status));
+  const cancelled = status === "cancelled";
+  const total = ((order.total_cents ?? order.total ?? 0) / (order.total_cents ? 100 : 1)) || 0;
+  const tracking = order.tracking_number;
+  const trackingCarrier = order.tracking_carrier || order.shipping_carrier_code;
+
+  return (
+    <div className="card-forge p-5 space-y-4" data-testid={`order-card-${order.order_id}`}>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="w-10 h-10 shrink-0 rounded bg-forge-elevated flex items-center justify-center">
+            <FileBox className="w-5 h-5 text-forge-primary"/>
+          </div>
+          <div className="min-w-0">
+            <p className="font-mono text-forge-primary text-sm truncate">{order.order_id}</p>
+            <p className="font-display text-forge-text truncate">{filename}</p>
+            <p className="text-xs text-forge-muted font-mono truncate">{material} · {colors} · Qty {qty}</p>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          {total > 0 && <p className="font-mono text-forge-primary text-lg font-semibold">${total.toFixed(2)}</p>}
+          <p className="text-[11px] text-forge-muted font-mono mt-0.5 flex items-center gap-1 justify-end">
+            <Clock className="w-3 h-3"/>{date}
+          </p>
+        </div>
       </div>
+
+      {/* Timeline */}
+      {cancelled ? (
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300" data-testid={`order-status-${order.order_id}-cancelled`}>
+          <XCircle className="w-4 h-4"/> Cancelled
+        </div>
+      ) : (
+        <div className="relative" data-testid={`order-timeline-${order.order_id}`}>
+          <div className="absolute left-0 right-0 top-3 h-0.5 bg-forge-border"/>
+          <div
+            className="absolute left-0 top-3 h-0.5 bg-forge-primary transition-all"
+            style={{ width: `${(stepIndex / (TIMELINE_STEPS.length - 1)) * 100}%` }}
+          />
+          <div className="relative grid grid-cols-5 gap-1">
+            {TIMELINE_STEPS.map((step, i) => {
+              const done = i <= stepIndex;
+              const current = i === stepIndex;
+              const S = step.Icon;
+              return (
+                <div key={step.key} className="flex flex-col items-center gap-1.5" data-testid={`order-step-${order.order_id}-${step.key}`}>
+                  <div
+                    className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center border-2 transition ${
+                      done
+                        ? "border-forge-primary bg-forge-primary text-forge-bg"
+                        : "border-forge-border bg-forge-surface text-forge-muted"
+                    } ${current ? "ring-4 ring-forge-primary/25" : ""}`}
+                  >
+                    <S className="w-3 h-3"/>
+                  </div>
+                  <div className={`text-center leading-tight ${done ? "text-forge-text" : "text-forge-muted"}`}>
+                    <div className="text-[10px] font-mono uppercase tracking-widest hidden sm:block">{step.label}</div>
+                    <div className="text-[9px] font-mono uppercase tracking-widest sm:hidden">{step.short}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {tracking && (
+        <div className="flex items-center gap-2 rounded-lg border border-forge-border bg-forge-elevated px-3 py-2 text-xs font-mono text-forge-muted" data-testid={`order-tracking-${order.order_id}`}>
+          <Truck className="w-3.5 h-3.5 text-forge-tech"/>
+          <span className="uppercase tracking-widest text-[10px]">{trackingCarrier || "Tracking"}</span>
+          <span className="text-forge-text">{tracking}</span>
+        </div>
+      )}
     </div>
   );
 }

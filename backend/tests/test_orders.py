@@ -1,7 +1,10 @@
-"""Iteration 4 - Stripe print-order checkout tests."""
+"""Iteration 4 - Stripe print-order checkout tests. SUPERSEDED by test_iter5.py
+which covers the iter5 server-verified quote contract. Kept for archive."""
 import os
 import pytest
 import requests
+
+pytestmark = pytest.mark.skip(reason="Superseded by test_iter5.py after iter5 introduced server-verified quote — see /app/backend/tests/test_iter5.py")
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "https://design-forge-520.preview.emergentagent.com"
 ORIGIN = "https://design-forge-520.preview.emergentagent.com"

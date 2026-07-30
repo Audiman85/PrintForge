@@ -93,7 +93,7 @@ export default function BulkCSVUpload({ onImported }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[11px] font-mono text-forge-muted">
-          Required columns: <span className="text-forge-text">title · description · category · price · print_time_hours · print_weight_grams</span>
+          <span className="text-forge-text">action</span> column: <span className="text-forge-tech">create</span> · <span className="text-forge-tech">update</span> · <span className="text-forge-tech">archive</span> · <span className="text-forge-tech">delete</span>. Match uses title.
         </p>
         <Button
           onClick={submit}
@@ -108,12 +108,13 @@ export default function BulkCSVUpload({ onImported }) {
 
       {result && (
         <div className="rounded-lg border border-forge-border bg-forge-bg p-4 space-y-2" data-testid="bulk-result">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <CheckCircle2 className="w-4 h-4 text-forge-primary"/>
-            <span className="font-display text-forge-text text-sm">
-              {result.inserted} added
-              {result.errors?.length ? ` · ${result.errors.length} errored` : ""}
-            </span>
+            {result.inserted > 0 && <span className="font-display text-forge-text text-sm">{result.inserted} added</span>}
+            {result.updated > 0 && <span className="font-display text-forge-tech text-sm">{result.updated} updated</span>}
+            {result.archived > 0 && <span className="font-display text-forge-muted text-sm">{result.archived} archived</span>}
+            {result.deleted > 0 && <span className="font-display text-red-400 text-sm">{result.deleted} deleted</span>}
+            {result.errors?.length > 0 && <span className="font-display text-forge-muted text-sm">· {result.errors.length} errored</span>}
           </div>
           {result.errors?.length > 0 && (
             <div className="max-h-40 overflow-y-auto space-y-1" data-testid="bulk-errors">
