@@ -35,6 +35,13 @@ export default function Header({ onOpenContact, onOpenChat }) {
             <span className="font-mono text-[9px] tracking-[0.2em] text-forge-tech uppercase hidden sm:inline">3D · MARKETPLACE</span>
           </div>
         </Link>
+
+        {/* Upload — moved to the left, right after the logo */}
+        <Link to="/print" data-testid="header-upload-btn" className="shrink-0">
+          <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech px-3 sm:px-4">
+            <Upload className="w-4 h-4 sm:mr-2"/> <span className="hidden sm:inline">Upload</span>
+          </Button>
+        </Link>
         <nav className="hidden md:flex items-center gap-6">
           <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
           <NavLink to="/search" className={linkCls} data-testid="nav-search">{t("nav.search")}</NavLink>
@@ -49,11 +56,6 @@ export default function Header({ onOpenContact, onOpenChat }) {
           </button>
         </nav>
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link to="/print" data-testid="header-upload-btn">
-            <Button variant="outline" size="sm" className="rounded-full border-forge-tech/50 bg-forge-tech/10 text-forge-tech hover:bg-forge-tech/20 hover:text-forge-tech px-3 sm:px-4">
-              <Upload className="w-4 h-4 sm:mr-2"/> <span className="hidden sm:inline">Upload</span>
-            </Button>
-          </Link>
           <div className="hidden sm:block"><LanguageSwitcher compact/></div>
           <Button
             variant="ghost" size="sm"

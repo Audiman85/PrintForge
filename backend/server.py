@@ -1066,6 +1066,8 @@ async def filament_stock():
         "materials": out,
     }
 
+app.include_router(api_router)
+
 @api_router.get("/filament/store-link")
 async def filament_store_link(material: str = Query("PLA")):
     """Returns an AnyCubic (or configured) store URL for the given material.

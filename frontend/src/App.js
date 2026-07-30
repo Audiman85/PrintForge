@@ -7,6 +7,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/ChatWidget";
 import ContactModal from "@/components/ContactModal";
+import InstallNudge from "@/components/InstallNudge";
 import Home from "@/pages/Home";
 import SearchPage from "@/pages/SearchPage";
 import ProductDetail from "@/pages/ProductDetail";
@@ -39,6 +40,7 @@ function AppRouter() {
       <Footer onOpenContact={() => setContactOpen(true)} />
       <ContactModal open={contactOpen} onOpenChange={setContactOpen} onOpenChat={() => setChatOpen(true)} />
       <ChatWidget openState={chatOpen} onOpenChange={setChatOpen} />
+      <InstallNudge/>
     </>
   );
 }
