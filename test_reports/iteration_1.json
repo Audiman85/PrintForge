@@ -1,0 +1,31 @@
+{
+  "summary": "Backend smoke + functional testing for PrintForge MVP. All 17 tests executed via public REACT_APP_BACKEND_URL passed, covering products, external search, auth (seeded session), wishlist, orders (guest + authed with STL upload), designs (with model+preview upload), likes, and file download roundtrip via Emergent Object Storage.",
+  "tested_scope": ["backend", "auth", "integration"],
+  "passed": [
+    "GET /api/products returns 9 seeded products with required fields (product_id, title, price, image_url, category, material, tags)",
+    "GET /api/products?category=home returns only home category items (4 items)",
+    "GET /api/products?q=dragon returns matching Articulated Dragon",
+    "GET /api/products/{product_id} returns product; unknown id returns 404",
+    "GET /api/search/external?q=dragon returns 6 curated results across Thingiverse/Printables/MyMiniFactory/Cults3D/Thangs with source field",
+    "GET /api/auth/me returns 401 with no token",
+    "GET /api/auth/me returns user with Bearer <seeded session token>",
+    "POST /api/orders as guest with STL file upload succeeds -> object storage put_object works",
+    "POST /api/orders as authed user with STL upload succeeds and persists user_id",
+    "GET /api/orders returns authed user's orders with storage_path populated",
+    "POST /api/wishlist/toggle returns in_wishlist=true; GET /api/wishlist returns product",
+    "POST /api/designs with model_file (STL) + preview_image (PNG) succeeds while authed",
+    "GET /api/designs returns the newly uploaded public design",
+    "POST /api/designs/{id}/like sets liked=true; GET /api/designs/{id} shows likes=1",
+    "GET /api/files/download?path=<storage_path> streams file back with byte-identical content (diff match)"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "not tested (backend-only request)"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": {
+    "auth_method": "Seeded user + user_sessions row via mongosh per /app/auth_testing.md; Bearer token used for authed endpoints.",
+    "mocked_apis": ["/api/search/external returns curated static results — real Thingiverse/Printables integrations pending API keys"],
+    "storage": "Emergent Object Storage put/get worked on first attempt; no 403 refresh needed."
+  }
+}
