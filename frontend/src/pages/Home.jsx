@@ -6,7 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight } from "lucide-react";
+import { Search, Rocket, Boxes, Cpu, Sparkles, ArrowRight, Activity, MessageCircle, Heart, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
@@ -95,9 +95,32 @@ export default function Home() {
             </div>
           </div>
           <div className="lg:col-span-5 relative">
-            <div className="relative rounded-2xl overflow-hidden border border-forge-border">
-              <img src="https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&h=800" alt="3D printer" className="w-full h-[520px] object-cover"/>
-              <div className="absolute inset-0 bg-gradient-to-t from-forge-bg via-transparent to-transparent" />
+            <div className="relative rounded-2xl overflow-hidden border border-forge-border" data-testid="hero-printer-card">
+              <img src="https://images.unsplash.com/photo-1631700611307-37dbcb89ef7e?w=800" alt="AnyCubic Kobra S1" className="w-full h-[520px] object-cover"/>
+              <div className="absolute inset-0 bg-gradient-to-t from-forge-bg via-forge-bg/40 to-transparent" />
+
+              {/* AnyCubic branded corner tag */}
+              <div className="absolute top-6 left-6 flex items-center gap-2 glass rounded-lg px-3 py-2">
+                <div className="w-8 h-8 rounded-md bg-gradient-to-br from-forge-tech to-forge-primary flex items-center justify-center font-display font-bold text-forge-bg text-sm">
+                  AC
+                </div>
+                <div>
+                  <div className="font-mono text-[8px] uppercase tracking-[0.2em] text-forge-muted leading-none">Powered by</div>
+                  <div className="font-display text-forge-text text-sm leading-tight">AnyCubic</div>
+                </div>
+              </div>
+
+              <div className="absolute top-6 right-6 chip chip-primary animate-forge-pulse"><Rocket className="w-3 h-3"/> LIVE</div>
+
+              {/* Model name pill */}
+              <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none">
+                <div className="glass rounded-full px-5 py-2 flex items-center gap-3">
+                  <span className="font-display font-semibold text-forge-text text-lg">Kobra S1</span>
+                  <span className="w-1 h-1 rounded-full bg-forge-primary animate-pulse"/>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">8-colour AMS</span>
+                </div>
+              </div>
+
               <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
                 <div className="glass rounded-lg px-4 py-3">
                   <div className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">Current Job</div>
@@ -108,7 +131,20 @@ export default function Home() {
                   <div className="font-mono text-forge-primary text-xl font-semibold">64%</div>
                 </div>
               </div>
-              <div className="absolute top-6 right-6 chip chip-primary animate-forge-pulse"><Rocket className="w-3 h-3"/> LIVE</div>
+            </div>
+
+            {/* Spec strip below */}
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {[
+                { l: "Speed", v: "600 mm/s" },
+                { l: "Colours", v: "8-filament" },
+                { l: "Chamber", v: "Heated" },
+              ].map((s, k) => (
+                <div key={k} className="card-forge p-3 text-center">
+                  <div className="font-mono text-[8px] uppercase tracking-widest text-forge-muted">{s.l}</div>
+                  <div className="font-display text-forge-text text-sm mt-0.5">{s.v}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -183,6 +219,99 @@ export default function Home() {
         )}
       </section>
 
+      {/* ANYCUBIC KOBRA S1 SHOWCASE */}
+      <section className="max-w-7xl mx-auto px-6 py-14" data-testid="kobra-showcase">
+        <div className="grid lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-5 space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-md bg-gradient-to-br from-forge-tech to-forge-primary flex items-center justify-center font-display font-bold text-forge-bg text-lg">AC</div>
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-forge-tech">AnyCubic · Official</div>
+                <div className="font-display text-forge-text text-lg leading-none">Our workshop printer</div>
+              </div>
+            </div>
+            <h2 className="font-display font-semibold text-forge-text text-4xl sm:text-5xl leading-tight">
+              Every print, forged on the<br/>
+              <span className="text-forge-primary">Kobra S1 Combo</span>
+            </h2>
+            <p className="text-forge-muted text-base leading-relaxed max-w-xl">
+              CoreXY motion at 600&nbsp;mm/s, an 8-filament Ace Pro AMS for true multi-material colour, AI vision monitoring, an enclosed heated chamber — the AnyCubic Kobra S1 is why we can hit tight tolerances and rich colour every time.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              {[
+                { label: "Build volume", value: "250 × 250 × 250 mm" },
+                { label: "Max speed",    value: "600 mm/s" },
+                { label: "Hotend",       value: "320°C hardened" },
+                { label: "AMS",          value: "8-filament Ace Pro" },
+                { label: "Chamber",      value: "Enclosed · heated" },
+                { label: "Nozzles",      value: "0.25 / 0.4 / 0.6 / 0.8 mm" },
+              ].map((s, k) => (
+                <div key={k} className="card-forge p-3">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-forge-muted">{s.label}</div>
+                  <div className="font-display text-forge-text text-sm mt-0.5">{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              <span className="chip chip-primary">AI VISION</span>
+              <span className="chip chip-tech">COREXY 600mm/s</span>
+              <span className="chip">AUTO LEVELLING</span>
+              <span className="chip">HEATED CHAMBER</span>
+              <span className="chip">8-COLOUR AMS</span>
+            </div>
+          </div>
+
+          <div className="lg:col-span-7 relative">
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-forge-border" data-testid="kobra-image">
+              <img
+                src="https://images.unsplash.com/photo-1631700611307-37dbcb89ef7e?w=1200&q=80"
+                alt="AnyCubic Kobra S1"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-forge-bg/70 via-forge-bg/10 to-transparent"/>
+              <div className="absolute inset-0 grain pointer-events-none opacity-50"/>
+
+              {/* Floating spec chips */}
+              <div className="absolute top-6 left-6 glass rounded-xl px-4 py-3">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">Model</div>
+                <div className="font-display text-forge-text text-xl leading-tight">Kobra S1 Combo</div>
+                <div className="font-mono text-[10px] text-forge-muted mt-1">AnyCubic · 2025 flagship</div>
+              </div>
+              <div className="absolute top-6 right-6 chip chip-primary animate-forge-pulse"><Rocket className="w-3 h-3"/> IN OUR SHOP</div>
+
+              <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-3">
+                {[
+                  { l: "PRINTING", v: "Layer 187 / 320" },
+                  { l: "TEMP",     v: "215°C · 65°C" },
+                  { l: "FILAMENT", v: "PLA · Silk Gold" },
+                ].map((s, k) => (
+                  <div key={k} className="glass rounded-lg px-3 py-2 flex-1 min-w-[140px]">
+                    <div className="font-mono text-[9px] uppercase tracking-widest text-forge-tech">{s.l}</div>
+                    <div className="font-display text-forge-text text-sm">{s.v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Colour bar strip below */}
+            <div className="mt-3 flex items-center gap-1.5 p-3 rounded-xl card-forge">
+              <div className="font-mono text-[9px] uppercase tracking-widest text-forge-tech mr-2">AMS · 8 slots</div>
+              {[
+                "#DC2626", "#EDEDED", "#2563EB", "#16A34A",
+                "#D4AF37", "#C0C0C0", "#8B5CF6", "#111111"
+              ].map((c, k) => (
+                <div key={k} className="w-7 h-7 rounded-md border border-forge-border relative" style={{ background: c }} title={`Slot ${k + 1}`}>
+                  <span className="absolute -top-1.5 -left-1.5 font-mono text-[8px] text-forge-bg bg-forge-primary rounded-full w-3.5 h-3.5 flex items-center justify-center">{k + 1}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* MOBILE APP DOWNLOAD */}
       <section className="max-w-7xl mx-auto px-6 py-14" data-testid="app-download-section">
         <div className="relative overflow-hidden rounded-2xl border border-forge-border bg-gradient-to-br from-forge-surface via-forge-surface to-forge-primary/10 p-8 md:p-12">
@@ -202,72 +331,60 @@ export default function Home() {
                 Track live prints, chat with the maker, save designs on the move, and get restock alerts the second new filament lands. Free on iOS &amp; Android.
               </p>
 
-              <div className="flex flex-wrap gap-3 mb-6">
-                <a
-                  href="https://apps.apple.com/app/printforge"
-                  target="_blank" rel="noreferrer"
+              <div className="flex flex-wrap gap-3 mb-6" data-testid="app-store-badges">
+                <button
+                  type="button"
+                  onClick={(e) => e.preventDefault()}
                   data-testid="app-store-btn"
-                  className="inline-flex items-center gap-3 bg-forge-bg border border-forge-border hover:border-forge-primary text-forge-text px-5 py-3 rounded-xl transition"
+                  aria-label="App Store — coming soon"
+                  className="relative inline-flex items-center gap-3 bg-forge-bg border border-forge-border text-forge-muted px-5 py-3 rounded-xl grayscale opacity-70 cursor-not-allowed"
                 >
                   <svg viewBox="0 0 24 24" className="w-8 h-8" fill="currentColor" aria-hidden="true">
                     <path d="M17.564 12.87c-.021-2.32 1.902-3.437 1.988-3.492-1.083-1.58-2.769-1.796-3.373-1.821-1.437-.144-2.804.845-3.535.845-.732 0-1.858-.822-3.05-.8-1.567.023-3.014.911-3.822 2.313-1.63 2.826-.418 7 1.171 9.29.777 1.121 1.702 2.38 2.918 2.336 1.171-.047 1.614-.759 3.03-.759 1.417 0 1.815.759 3.05.734 1.26-.022 2.058-1.144 2.827-2.27.89-1.298 1.257-2.555 1.278-2.62-.028-.011-2.457-.943-2.482-3.756zm-2.34-6.9c.65-.786 1.087-1.878.968-2.97-.938.038-2.073.624-2.744 1.41-.601.696-1.128 1.808-.986 2.878 1.046.082 2.113-.53 2.762-1.318z"/>
                   </svg>
                   <div className="text-left">
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-forge-muted leading-none">Download on the</div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest leading-none">Download on the</div>
                     <div className="font-display text-lg leading-tight">App Store</div>
                   </div>
-                </a>
+                  <span className="absolute -top-2 -right-2 chip chip-tech text-[9px]">COMING SOON</span>
+                </button>
 
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.printforge"
-                  target="_blank" rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={(e) => e.preventDefault()}
                   data-testid="google-play-btn"
-                  className="inline-flex items-center gap-3 bg-forge-bg border border-forge-border hover:border-forge-primary text-forge-text px-5 py-3 rounded-xl transition"
+                  aria-label="Google Play — coming soon"
+                  className="relative inline-flex items-center gap-3 bg-forge-bg border border-forge-border text-forge-muted px-5 py-3 rounded-xl grayscale opacity-70 cursor-not-allowed"
                 >
                   <svg viewBox="0 0 24 24" className="w-8 h-8" aria-hidden="true">
-                    <path fill="#00F0FF" d="M3.6 2.3c-.3.3-.5.8-.5 1.4v16.6c0 .6.2 1.1.5 1.4l11-11-11-8.4z"/>
-                    <path fill="#FF6B00" d="M17.1 12l-2.5 2.5L4 21.7c.4.1.9 0 1.4-.3l11.7-6.7L17.1 12z"/>
-                    <path fill="#EDEDED" d="M20.4 10.2l-3.3-1.9-2.9 2.9L17 14l3.3-1.9c1-.6 1-1.5.1-2z"/>
-                    <path fill="#8B5CF6" d="M14.6 11.2l2.5-2.5L5.4 2.1c-.5-.3-1-.4-1.4-.3l10.6 9.4z"/>
+                    <path fill="#7A7A7F" d="M3.6 2.3c-.3.3-.5.8-.5 1.4v16.6c0 .6.2 1.1.5 1.4l11-11-11-8.4z"/>
+                    <path fill="#5C5C66" d="M17.1 12l-2.5 2.5L4 21.7c.4.1.9 0 1.4-.3l11.7-6.7L17.1 12z"/>
+                    <path fill="#8E8E9B" d="M20.4 10.2l-3.3-1.9-2.9 2.9L17 14l3.3-1.9c1-.6 1-1.5.1-2z"/>
+                    <path fill="#5C5C66" d="M14.6 11.2l2.5-2.5L5.4 2.1c-.5-.3-1-.4-1.4-.3l10.6 9.4z"/>
                   </svg>
                   <div className="text-left">
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-forge-muted leading-none">Get it on</div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest leading-none">Get it on</div>
                     <div className="font-display text-lg leading-tight">Google Play</div>
                   </div>
-                </a>
+                  <span className="absolute -top-2 -right-2 chip chip-tech text-[9px]">COMING SOON</span>
+                </button>
               </div>
+
+              <p className="text-[11px] font-mono text-forge-muted uppercase tracking-widest mb-4">
+                Native apps are in the workshop — leave your email in <a href="/dashboard" className="text-forge-primary link-underline">your profile</a> and we'll ping you the day they land.
+              </p>
 
               <div className="flex flex-wrap items-center gap-6 text-xs font-mono text-forge-muted">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-forge-primary">★★★★★</span> 4.8 · 2.4k reviews
+                  <span className="text-forge-primary">★★★★★</span> Web app · 4.8 rating
                 </span>
                 <span>iOS 15+ · Android 10+</span>
                 <span className="text-forge-tech uppercase tracking-widest">Free · No ads</span>
               </div>
             </div>
 
-            <div className="relative flex justify-center md:justify-end">
-              <div className="relative w-56 aspect-[9/19] rounded-[2.5rem] bg-forge-bg border-[6px] border-forge-elevated shadow-2xl overflow-hidden rotate-3">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-forge-elevated rounded-b-2xl z-10"/>
-                <img
-                  src="https://images.unsplash.com/photo-1748852458189-38b171a9e7ec?w=500"
-                  alt="PrintForge mobile"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-forge-bg/90 via-transparent to-forge-bg/50"/>
-                <div className="absolute bottom-6 left-4 right-4">
-                  <div className="chip chip-tech mb-2">LIVE</div>
-                  <div className="font-display text-forge-text text-sm">Voronoi Lamp Shade</div>
-                  <div className="font-mono text-[10px] text-forge-muted uppercase tracking-widest">Printing · 64%</div>
-                  <div className="mt-2 h-1.5 rounded-full bg-forge-elevated overflow-hidden">
-                    <div className="h-full bg-forge-primary" style={{width: "64%"}}/>
-                  </div>
-                </div>
-              </div>
-              <div className="hidden md:block absolute -left-8 top-8 w-44 aspect-[9/19] rounded-[2rem] bg-forge-bg border-[5px] border-forge-elevated shadow-xl overflow-hidden -rotate-6 opacity-70">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-4 bg-forge-elevated rounded-b-2xl z-10"/>
-                <div className="w-full h-full bg-gradient-to-br from-forge-primary/40 via-forge-tech/20 to-transparent"/>
-              </div>
+            <div className="relative">
+              <AppScreensCarousel/>
             </div>
           </div>
         </div>
@@ -333,6 +450,100 @@ function ComingSoonCategory({ category }) {
             </button>
           </form>
         )}
+      </div>
+    </div>
+  );
+}
+
+function AppScreensCarousel() {
+  const [i, setI] = useState(0);
+  const screens = [
+    { key: "tracking", title: "Live Print Tracking", icon: Activity, tint: "#FF6B00", desc: "Watch every layer in real time", metric: "64%", metricLabel: "Voronoi Lamp Shade" },
+    { key: "chat",     title: "Chat with the Maker", icon: MessageCircle, tint: "#00F0FF", desc: "Auto-translated · 12 languages", metric: "2 new", metricLabel: "Replies waiting" },
+    { key: "wishlist", title: "Wishlist On the Go", icon: Heart, tint: "#FF6B00", desc: "Save designs, order in one tap", metric: "18", metricLabel: "Saved items" },
+    { key: "restock",  title: "Restock Alerts", icon: Bell, tint: "#00F0FF", desc: "Ping the moment new spools land", metric: "3", metricLabel: "ABS · ASA · Silk-PLA" },
+  ];
+  useEffect(() => {
+    const t = setInterval(() => setI((v) => (v + 1) % screens.length), 3800);
+    return () => clearInterval(t);
+    // eslint-disable-next-line
+  }, []);
+  const s = screens[i];
+  const Icon = s.icon;
+  return (
+    <div className="relative flex justify-center md:justify-end" data-testid="app-carousel">
+      {/* Ghost phones behind */}
+      {[-2, -1, 1, 2].map((off) => {
+        const idx = (i + off + screens.length) % screens.length;
+        const g = screens[idx];
+        const GIcon = g.icon;
+        return (
+          <div
+            key={`ghost-${off}`}
+            className="hidden md:flex absolute w-40 aspect-[9/19] rounded-[2rem] bg-forge-bg border-[5px] border-forge-elevated shadow-xl overflow-hidden flex-col justify-end pb-4 px-3 pointer-events-none transition-all duration-500"
+            style={{
+              transform: `translateX(${off * 90}px) rotate(${off * 6}deg) scale(${1 - Math.abs(off) * 0.08})`,
+              opacity: 0.35,
+              zIndex: 0,
+            }}
+          >
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-4 bg-forge-elevated rounded-b-2xl"/>
+            <div className="w-full h-full absolute inset-0" style={{ background: `radial-gradient(circle at 50% 20%, ${g.tint}30, transparent 70%)` }}/>
+            <GIcon className="w-6 h-6 mb-1" style={{ color: g.tint }}/>
+            <div className="font-display text-forge-text text-xs">{g.title}</div>
+          </div>
+        );
+      })}
+
+      {/* Active phone */}
+      <div className="relative w-56 aspect-[9/19] rounded-[2.5rem] bg-forge-bg border-[6px] border-forge-elevated shadow-2xl overflow-hidden z-10 transition-all duration-500" data-testid={`app-screen-${s.key}`}>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-forge-elevated rounded-b-2xl z-20"/>
+        {/* Kobra S1 hero visual */}
+        <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${s.tint}22 0%, transparent 40%), radial-gradient(ellipse at 50% 20%, ${s.tint}55, transparent 60%), #0A0A0C` }}/>
+        <div className="absolute top-16 left-4 right-4 flex items-start justify-between">
+          <div>
+            <div className="font-mono text-[9px] uppercase tracking-widest text-forge-tech">Kobra S1</div>
+            <div className="font-display text-forge-text text-sm leading-tight mt-0.5">{s.title}</div>
+          </div>
+          <Icon className="w-5 h-5" style={{ color: s.tint }}/>
+        </div>
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center">
+          <div className="relative w-32 h-32 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full blur-2xl" style={{ background: s.tint, opacity: 0.35 }}/>
+            <Icon className="w-16 h-16" style={{ color: s.tint }}/>
+          </div>
+        </div>
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="font-mono text-[9px] uppercase tracking-widest text-forge-muted">{s.desc}</div>
+          <div className="mt-2 p-2.5 rounded-lg bg-forge-elevated border border-forge-border flex items-baseline justify-between">
+            <div className="min-w-0">
+              <div className="font-mono text-[8px] uppercase tracking-widest text-forge-muted">{s.metricLabel}</div>
+              <div className="font-display text-forge-text text-sm truncate">{s.title}</div>
+            </div>
+            <div className="font-display text-lg font-semibold" style={{ color: s.tint }}>{s.metric}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav dots */}
+      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20">
+        <button onClick={() => setI((v) => (v - 1 + screens.length) % screens.length)} data-testid="carousel-prev" className="w-8 h-8 rounded-full border border-forge-border bg-forge-elevated hover:border-forge-primary flex items-center justify-center text-forge-muted hover:text-forge-primary transition">
+          <ChevronLeft className="w-4 h-4"/>
+        </button>
+        <div className="flex gap-1.5">
+          {screens.map((_, k) => (
+            <button
+              key={k}
+              onClick={() => setI(k)}
+              data-testid={`carousel-dot-${k}`}
+              aria-label={`Screen ${k + 1}`}
+              className={`h-1.5 rounded-full transition-all ${k === i ? "w-6 bg-forge-primary" : "w-1.5 bg-forge-border hover:bg-forge-faint"}`}
+            />
+          ))}
+        </div>
+        <button onClick={() => setI((v) => (v + 1) % screens.length)} data-testid="carousel-next" className="w-8 h-8 rounded-full border border-forge-border bg-forge-elevated hover:border-forge-primary flex items-center justify-center text-forge-muted hover:text-forge-primary transition">
+          <ChevronRight className="w-4 h-4"/>
+        </button>
       </div>
     </div>
   );

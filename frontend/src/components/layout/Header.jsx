@@ -32,7 +32,10 @@ export default function Header({ onOpenContact, onOpenChat }) {
           </div>
           <div className="flex flex-col leading-none">
             <span className="font-display font-semibold text-forge-text text-lg">PrintForge</span>
-            <span className="font-mono text-[9px] tracking-[0.2em] text-forge-tech uppercase">3D · MARKETPLACE</span>
+            <span className="font-mono text-[9px] tracking-[0.2em] text-forge-tech uppercase flex items-center gap-1">
+              <span className="w-3 h-3 rounded-sm bg-gradient-to-br from-forge-tech to-forge-primary flex items-center justify-center text-[6px] font-bold text-forge-bg">AC</span>
+              KOBRA S1
+            </span>
           </div>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
