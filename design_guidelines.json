@@ -1,0 +1,100 @@
+{
+  "theme": {
+    "mode": "dark",
+    "emotional_archetype": "Warm Industrial Tech (Arch 7 + Arch 1 Blend)",
+    "description": "High-contrast dark surfaces with warm 'heated filament' accent lighting. Inspired by dark-mode CAD/slicer software to provide a highly visual, maker-oriented marketplace."
+  },
+  "colors": {
+    "backgrounds": {
+      "base": "#0A0A0C",
+      "surface": "#141417",
+      "surface_elevated": "#1C1C21"
+    },
+    "accents": {
+      "primary": "#FF6B00",
+      "primary_hover": "#FF8A33",
+      "primary_glow": "rgba(255, 107, 0, 0.5)",
+      "tech_secondary": "#00F0FF",
+      "success": "#22C55E",
+      "warning": "#F59E0B"
+    },
+    "text": {
+      "primary": "#EDEDF0",
+      "secondary": "#8E8E9B",
+      "muted": "#5C5C66",
+      "inverse": "#0A0A0C"
+    },
+    "borders": {
+      "default": "#2A2A30",
+      "focus": "#FF6B00"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "headings": "Outfit, sans-serif",
+      "body": "IBM Plex Sans, sans-serif",
+      "monospace": "JetBrains Mono, monospace"
+    },
+    "rules": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-medium",
+      "body": "text-base leading-relaxed text-[#8E8E9B]",
+      "labels_and_metadata": "text-xs uppercase tracking-[0.1em] font-mono text-[#00F0FF]"
+    }
+  },
+  "spacing_and_layout": {
+    "philosophy": "Layered and dense for technical data, spacious and immersive for 3D model showcases.",
+    "grid_system": "Bento grids for user dashboard. Wide asymmetrical grids for product marketplace with tight gaps (gap-4 or gap-6).",
+    "surface_treatment": "Flat dark backgrounds with sharp 1px borders (#2A2A30). Use minimal border-radius (rounded-md or rounded-lg).",
+    "headers": "Crystal Glass style: bg-[#0A0A0C]/80 backdrop-blur-xl border-b border-[#2A2A30]. CRITICAL: Never use a fully transparent header."
+  },
+  "components": {
+    "buttons": "Pill-shaped or sharp-edged. Primary buttons use #FF6B00 background with dark text. Include micro-interaction scale down on click.",
+    "cards": "Visual-first. Large render on top, technical metadata chips (STL, Supports, Wall Thickness) overlaid or directly below. 1px solid border, no default shadow.",
+    "file_upload": "Custom dropzone component. Dashed border (#2A2A30) that transitions to solid #FF6B00 with a subtle glow when dragging a file. Include 3D file icon.",
+    "search_bar": "Prominent Command Palette style input for aggregated search (Thingiverse/Printables). Include keyboard shortcut hints (Cmd+K) in JetBrains Mono.",
+    "badges": "Use highly visible tech chips. e.g. STL format tag (cyan text on dark cyan bg), Print Time tag (orange text on dark orange bg).",
+    "3d_viewer": "Integrate React Three Fiber (R3F) for model previews. Background of the canvas should be transparent to blend with the UI. Use Drei's <Stage> for optimal lighting of the STL/OBJ.",
+    "dropdowns_and_menus": "CRITICAL: Must have solid or heavy blurred backgrounds (bg-[#141417] or bg-[#141417]/90 backdrop-blur-md). Never use transparent backgrounds."
+  },
+  "motion_and_interactions": {
+    "hover_states": "Cards lift slightly (-translate-y-1) and border color shifts from #2A2A30 to #5C5C66. Primary CTA gets a glowing drop-shadow.",
+    "page_transitions": "Subtle fade and slide up (Framer Motion).",
+    "loading": "Instead of a standard spinner, use an animated 'printing' progress bar or a glowing line drawing a 3D cube."
+  },
+  "media_and_icons": {
+    "icon_library": "@phosphor-icons/react (Duotone or Regular weight for a technical but accessible feel)",
+    "image_urls": {
+      "hero_backgrounds": [
+        "https://images.pexels.com/photos/31137405/pexels-photo-31137405.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "https://images.pexels.com/photos/30720501/pexels-photo-30720501.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+      ],
+      "model_showcase": [
+        "https://images.unsplash.com/photo-1518732714860-b62714ce0c59",
+        "https://images.unsplash.com/photo-1748852458189-38b171a9e7ec",
+        "https://images.unsplash.com/photo-1703221561813-cdaa308cf9e7"
+      ]
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the Dark Industrial Tech color palette.",
+    "Do NOT use pure #000000; stick to the provided #0A0A0C base.",
+    "Implement the UI using pure HTML+Tailwind for high-level layouts, and Shadcn for interactive pieces (Forms, Dialogs, Menus).",
+    "Ensure all interactive elements have hover states (color change + cursor-pointer).",
+    "Use standard DOM elements configured via Tailwind for the Bento grid dashboard layout.",
+    "Implement Sonner for toast notifications (e.g., 'Added to Wishlist', 'Print Job Submitted').",
+    "Stripe integration should be clean and technical, opening in a customized modal or a dedicated high-contrast checkout route.",
+    "For the 3D model viewer, if actual STL parsing is complex, build a visually accurate mock using a static image wrapped in a '3D Viewer' UI overlay with rotation control hints.",
+    "Include data-testid attributes on all interactive elements (buttons, inputs, links)."
+  ],
+  "universal_guidelines": [
+    "Do not center-align the main app container. Text reads left-to-right.",
+    "Avoid AI slop: No generic centered layouts, no overused gradients, no emoji icons.",
+    "Create depth through z-index layered elements.",
+    "Ensure contrast passes APCA/WCAG standards.",
+    "Use 2-3x more spacing (p-8, p-12) to make the UI breathe.",
+    "Do not apply global 'transition: all' rules.",
+    "All interactive and key informational elements MUST include a data-testid attribute to facilitate robust automated testing."
+  ]
+}
