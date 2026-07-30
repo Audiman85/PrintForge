@@ -52,7 +52,7 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
 
         <nav className="hidden md:flex items-center gap-5 lg:gap-6">
           <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
-          {user && <NavLink to="/tools" className={linkCls} data-testid="nav-tools">Tools</NavLink>}
+          <NavLink to="/tools" className={linkCls} data-testid="nav-tools">Tools</NavLink>
           <NavLink to="/community" className={linkCls} data-testid="nav-community">{t("nav.community")}</NavLink>
           <NavLink to="/supporters" className={linkCls} data-testid="nav-supporters">Supporters</NavLink>
           <button
@@ -167,11 +167,11 @@ export default function Header({ onOpenContact, onOpenChat, onOpenDonate }) {
         <nav className="overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-1 px-3 py-1.5 min-w-max">
             {[
-              { to: "/",           key: "marketplace", label: t("nav.marketplace"), gated: false },
-              { to: "/tools",      key: "tools",       label: "Tools",              gated: true },
-              { to: "/community",  key: "community",   label: t("nav.community"),   gated: false },
-              { to: "/supporters", key: "supporters",  label: "Supporters",         gated: false },
-            ].filter(item => !item.gated || user).map(item => (
+              { to: "/",           key: "marketplace", label: t("nav.marketplace") },
+              { to: "/tools",      key: "tools",       label: "Tools" },
+              { to: "/community",  key: "community",   label: t("nav.community") },
+              { to: "/supporters", key: "supporters",  label: "Supporters" },
+            ].map(item => (
               <NavLink
                 key={item.key}
                 to={item.to}

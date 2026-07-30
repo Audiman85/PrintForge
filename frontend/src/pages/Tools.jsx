@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { ExternalLink, Search, Wand2, Type, Image as ImageIcon, Puzzle, Sparkles, Frame, Coins, Stamp, Cookie, ScanLine, Layers, KeyRound, Vote, Camera, Palette, Ruler } from "lucide-react";
+import { loginWithReturn } from "@/lib/authRedirect";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Search, Wand2, LogIn, Lock, Type, Image as ImageIcon, Puzzle, Sparkles, Frame, Coins, Stamp, Cookie, ScanLine, Layers, KeyRound, Vote, Camera, Palette, Ruler } from "lucide-react";
 
 // Curated set of MakerWorld MakerLab tools — always up to date via the direct link.
 // Adding a tool? Just append to this list. No backend calls required.
@@ -203,7 +204,37 @@ export default function Tools() {
       </div>
     );
   }
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-16 text-center" data-testid="tools-gate">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl border border-forge-primary/40 bg-forge-primary/15 flex items-center justify-center">
+          <Wand2 className="w-8 h-8 text-forge-primary"/>
+        </div>
+        <div className="flex items-center gap-2 justify-center mb-2">
+          <span className="chip chip-tech text-[10px]"><Lock className="w-3 h-3"/> Members only</span>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-forge-tech">AI · MakerLab</span>
+        </div>
+        <h1 className="font-display font-semibold text-forge-text text-3xl sm:text-4xl leading-tight mb-3">
+          Sign in to open <span className="text-forge-primary">MakerLab</span>.
+        </h1>
+        <p className="text-forge-muted text-sm sm:text-base max-w-xl mx-auto mb-6">
+          16 AI generation tools — photo to 3D, lithophanes, custom signs, puzzles, statues and more. Free to use once you're signed in.
+        </p>
+        <Button
+          onClick={() => loginWithReturn("/tools")}
+          className="btn-forge rounded-full px-6 py-5 text-sm"
+          data-testid="tools-gate-signin"
+        >
+          <LogIn className="w-4 h-4 mr-2"/> Sign in with Google
+        </Button>
+        <div className="flex flex-wrap gap-1.5 justify-center mt-8 max-w-lg mx-auto">
+          {TOOLS.slice(0, 8).map((t) => (
+            <span key={t.id} className="chip text-[10px]">{t.name}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-16" data-testid="tools-page">
