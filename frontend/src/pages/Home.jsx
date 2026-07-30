@@ -183,6 +183,96 @@ export default function Home() {
         )}
       </section>
 
+      {/* MOBILE APP DOWNLOAD */}
+      <section className="max-w-7xl mx-auto px-6 py-14" data-testid="app-download-section">
+        <div className="relative overflow-hidden rounded-2xl border border-forge-border bg-gradient-to-br from-forge-surface via-forge-surface to-forge-primary/10 p-8 md:p-12">
+          <div className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-forge-primary/15 blur-3xl pointer-events-none"/>
+          <div className="absolute -bottom-20 -left-16 w-72 h-72 rounded-full bg-forge-tech/10 blur-3xl pointer-events-none"/>
+
+          <div className="relative grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="scanline w-16"/>
+                <span className="font-mono text-xs uppercase tracking-[0.2em] text-forge-tech">PrintForge on the go</span>
+              </div>
+              <h2 className="font-display font-semibold text-forge-text text-4xl sm:text-5xl leading-tight mb-4">
+                Take your <span className="text-forge-primary">workshop</span><br/>everywhere.
+              </h2>
+              <p className="text-forge-muted text-base leading-relaxed mb-8 max-w-lg">
+                Track live prints, chat with the maker, save designs on the move, and get restock alerts the second new filament lands. Free on iOS &amp; Android.
+              </p>
+
+              <div className="flex flex-wrap gap-3 mb-6">
+                <a
+                  href="https://apps.apple.com/app/printforge"
+                  target="_blank" rel="noreferrer"
+                  data-testid="app-store-btn"
+                  className="inline-flex items-center gap-3 bg-forge-bg border border-forge-border hover:border-forge-primary text-forge-text px-5 py-3 rounded-xl transition"
+                >
+                  <svg viewBox="0 0 24 24" className="w-8 h-8" fill="currentColor" aria-hidden="true">
+                    <path d="M17.564 12.87c-.021-2.32 1.902-3.437 1.988-3.492-1.083-1.58-2.769-1.796-3.373-1.821-1.437-.144-2.804.845-3.535.845-.732 0-1.858-.822-3.05-.8-1.567.023-3.014.911-3.822 2.313-1.63 2.826-.418 7 1.171 9.29.777 1.121 1.702 2.38 2.918 2.336 1.171-.047 1.614-.759 3.03-.759 1.417 0 1.815.759 3.05.734 1.26-.022 2.058-1.144 2.827-2.27.89-1.298 1.257-2.555 1.278-2.62-.028-.011-2.457-.943-2.482-3.756zm-2.34-6.9c.65-.786 1.087-1.878.968-2.97-.938.038-2.073.624-2.744 1.41-.601.696-1.128 1.808-.986 2.878 1.046.082 2.113-.53 2.762-1.318z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-forge-muted leading-none">Download on the</div>
+                    <div className="font-display text-lg leading-tight">App Store</div>
+                  </div>
+                </a>
+
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.printforge"
+                  target="_blank" rel="noreferrer"
+                  data-testid="google-play-btn"
+                  className="inline-flex items-center gap-3 bg-forge-bg border border-forge-border hover:border-forge-primary text-forge-text px-5 py-3 rounded-xl transition"
+                >
+                  <svg viewBox="0 0 24 24" className="w-8 h-8" aria-hidden="true">
+                    <path fill="#00F0FF" d="M3.6 2.3c-.3.3-.5.8-.5 1.4v16.6c0 .6.2 1.1.5 1.4l11-11-11-8.4z"/>
+                    <path fill="#FF6B00" d="M17.1 12l-2.5 2.5L4 21.7c.4.1.9 0 1.4-.3l11.7-6.7L17.1 12z"/>
+                    <path fill="#EDEDED" d="M20.4 10.2l-3.3-1.9-2.9 2.9L17 14l3.3-1.9c1-.6 1-1.5.1-2z"/>
+                    <path fill="#8B5CF6" d="M14.6 11.2l2.5-2.5L5.4 2.1c-.5-.3-1-.4-1.4-.3l10.6 9.4z"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-forge-muted leading-none">Get it on</div>
+                    <div className="font-display text-lg leading-tight">Google Play</div>
+                  </div>
+                </a>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-6 text-xs font-mono text-forge-muted">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-forge-primary">★★★★★</span> 4.8 · 2.4k reviews
+                </span>
+                <span>iOS 15+ · Android 10+</span>
+                <span className="text-forge-tech uppercase tracking-widest">Free · No ads</span>
+              </div>
+            </div>
+
+            <div className="relative flex justify-center md:justify-end">
+              <div className="relative w-56 aspect-[9/19] rounded-[2.5rem] bg-forge-bg border-[6px] border-forge-elevated shadow-2xl overflow-hidden rotate-3">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-forge-elevated rounded-b-2xl z-10"/>
+                <img
+                  src="https://images.unsplash.com/photo-1748852458189-38b171a9e7ec?w=500"
+                  alt="PrintForge mobile"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-forge-bg/90 via-transparent to-forge-bg/50"/>
+                <div className="absolute bottom-6 left-4 right-4">
+                  <div className="chip chip-tech mb-2">LIVE</div>
+                  <div className="font-display text-forge-text text-sm">Voronoi Lamp Shade</div>
+                  <div className="font-mono text-[10px] text-forge-muted uppercase tracking-widest">Printing · 64%</div>
+                  <div className="mt-2 h-1.5 rounded-full bg-forge-elevated overflow-hidden">
+                    <div className="h-full bg-forge-primary" style={{width: "64%"}}/>
+                  </div>
+                </div>
+              </div>
+              <div className="hidden md:block absolute -left-8 top-8 w-44 aspect-[9/19] rounded-[2rem] bg-forge-bg border-[5px] border-forge-elevated shadow-xl overflow-hidden -rotate-6 opacity-70">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-4 bg-forge-elevated rounded-b-2xl z-10"/>
+                <div className="w-full h-full bg-gradient-to-br from-forge-primary/40 via-forge-tech/20 to-transparent"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FEATURE STRIP */}
       <section className="max-w-7xl mx-auto px-6 py-14">
         <div className="grid md:grid-cols-3 gap-4">

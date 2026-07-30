@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Plus, PackageOpen, ImagePlus, Trash2, Sparkles } from "lucide-react";
+import { Plus, PackageOpen, ImagePlus, Trash2, Sparkles, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import ModelPreview from "@/components/ModelPreview";
+import ProductCalculator from "@/components/ProductCalculator";
 
 const SHAPES = ["torusknot", "sphere", "icosahedron", "dodecahedron", "octahedron", "cone", "cylinder", "box"];
 
@@ -100,10 +101,15 @@ export default function AdminProducts() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-14">
-      <div className="mb-8">
-        <div className="scanline w-12 mb-3"/>
-        <h1 className="font-display font-semibold text-forge-text text-4xl">Manage Products</h1>
-        <p className="text-forge-muted mt-2">Add new items to your catalog. Categories, materials, and printing profiles all use the same options as the customer configurator.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <div className="scanline w-12 mb-3"/>
+          <h1 className="font-display font-semibold text-forge-text text-4xl">Manage Products</h1>
+          <p className="text-forge-muted mt-2">Add new items to your catalog. Use the industry-standard calculator to set a fair retail price.</p>
+        </div>
+        <a href="#calculator" className="inline-flex items-center gap-2 self-start px-4 py-2 rounded-full border border-forge-border bg-forge-elevated text-forge-text hover:border-forge-primary text-sm">
+          <Calculator className="w-4 h-4 text-forge-primary"/> Pricing calculator
+        </a>
       </div>
 
       <div className="grid lg:grid-cols-5 gap-8">

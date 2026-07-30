@@ -12,6 +12,16 @@ const DEFAULT_PALETTE = [
 ];
 const BLACK = "#111111";
 
+// Standard stock colours — always available at the shop.
+const STANDARD_COLORS = [
+  { name: "Red",   hex: "#DC2626" },
+  { name: "White", hex: "#EDEDED" },
+  { name: "Blue",  hex: "#2563EB" },
+  { name: "Green", hex: "#16A34A" },
+  { name: "Gray",  hex: "#6B7280" },
+  { name: "Black", hex: "#111111" },
+];
+
 // Named colour swatches for "restricted" materials so the swatch reflects reality.
 const NAMED_COLORS = {
   "Black":  "#111111",

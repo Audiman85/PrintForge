@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import StlPreview from "@/components/StlPreview";
 
-const MATERIALS = ["PLA","PETG","ABS","TPU","Resin","Wood-PLA","Silk-PLA"];
+const MATERIALS = ["PLA","PETG","ABS","TPU","Silk-PLA","Carbon-PLA","ASA","Carbon-PETG"];
 const COLORS = ["Any","Black","White","Grey","Red","Blue","Green","Yellow","Orange","Purple","Multi"];
 
 export default function PrintRequest() {
