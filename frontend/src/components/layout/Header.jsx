@@ -1,10 +1,12 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { Search, User, LogOut, Heart, Upload, Package, LayoutGrid, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 function loginWithGoogle() {
@@ -15,6 +17,7 @@ function loginWithGoogle() {
 export default function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const linkCls = ({ isActive }) =>
     `text-sm font-medium transition-colors ${isActive ? "text-forge-primary" : "text-forge-text/80 hover:text-forge-text"}`;
@@ -33,12 +36,13 @@ export default function Header() {
           </div>
         </Link>
         <nav className="hidden md:flex items-center gap-8">
-          <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">Marketplace</NavLink>
-          <NavLink to="/search" className={linkCls} data-testid="nav-search">Search</NavLink>
-          <NavLink to="/community" className={linkCls} data-testid="nav-community">Community</NavLink>
-          <NavLink to="/print" className={linkCls} data-testid="nav-print">Send To Print</NavLink>
+          <NavLink to="/" end className={linkCls} data-testid="nav-marketplace">{t("nav.marketplace")}</NavLink>
+          <NavLink to="/search" className={linkCls} data-testid="nav-search">{t("nav.search")}</NavLink>
+          <NavLink to="/community" className={linkCls} data-testid="nav-community">{t("nav.community")}</NavLink>
+          <NavLink to="/print" className={linkCls} data-testid="nav-print">{t("nav.print")}</NavLink>
         </nav>
         <div className="flex items-center gap-3">
+          <LanguageSwitcher compact/>
           <Button
             variant="ghost" size="sm"
             className="text-forge-muted hover:text-forge-text"
@@ -62,26 +66,26 @@ export default function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-forge-surface border-forge-border text-forge-text">
                 <DropdownMenuItem onClick={() => navigate("/dashboard")} data-testid="menu-dashboard">
-                  <LayoutGrid className="w-4 h-4 mr-2"/> Dashboard
+                  <LayoutGrid className="w-4 h-4 mr-2"/> {t("nav.dashboard")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/dashboard?tab=wishlist")} data-testid="menu-wishlist">
-                  <Heart className="w-4 h-4 mr-2"/> Wishlist
+                  <Heart className="w-4 h-4 mr-2"/> {t("nav.wishlist")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/dashboard?tab=designs")} data-testid="menu-designs">
-                  <Upload className="w-4 h-4 mr-2"/> My Designs
+                  <Upload className="w-4 h-4 mr-2"/> {t("nav.designs")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/dashboard?tab=orders")} data-testid="menu-orders">
-                  <Package className="w-4 h-4 mr-2"/> My Orders
+                  <Package className="w-4 h-4 mr-2"/> {t("nav.orders")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={async () => { await logout(); navigate("/"); }} data-testid="menu-logout">
-                  <LogOut className="w-4 h-4 mr-2"/> Sign out
+                  <LogOut className="w-4 h-4 mr-2"/> {t("nav.signout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button className="btn-forge rounded-full px-5" onClick={loginWithGoogle} data-testid="login-btn">
-              <LogIn className="w-4 h-4 mr-2"/> Sign in
+              <LogIn className="w-4 h-4 mr-2"/> {t("nav.signin")}
             </Button>
           )}
         </div>

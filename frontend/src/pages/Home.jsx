@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export default function Home() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const load = async () => {
     setLoading(true);
@@ -57,26 +59,25 @@ export default function Home() {
           <div className="lg:col-span-7 space-y-8">
             <div className="flex items-center gap-3">
               <div className="scanline w-16" />
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-forge-tech">3D · print · marketplace</span>
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-forge-tech">{t("hero.eyebrow")}</span>
             </div>
             <h1 className="font-display font-semibold text-forge-text text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight">
-              Forge your next<br/>
-              <span className="text-forge-primary">three‑dimensional</span><br/>
-              obsession.
+              {t("hero.title1")}<br/>
+              <span className="text-forge-primary">{t("hero.title2")}</span><br/>
+              {t("hero.title3")}
             </h1>
             <p className="text-forge-muted text-lg max-w-xl leading-relaxed">
-              Discover print‑ready designs, search every major model site in one place,
-              and send us any file to have it printed and shipped. A workbench for the maker era.
+              {t("hero.desc")}
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link to="/search">
                 <Button className="btn-forge rounded-full px-6 py-6 text-base" data-testid="hero-cta-search">
-                  <Search className="w-4 h-4 mr-2"/> Search 3D models
+                  <Search className="w-4 h-4 mr-2"/> {t("hero.cta_search")}
                 </Button>
               </Link>
               <Link to="/print">
                 <Button variant="outline" className="rounded-full px-6 py-6 text-base border-forge-border bg-transparent text-forge-text hover:bg-forge-elevated hover:text-forge-text" data-testid="hero-cta-print">
-                  Send a file to print <ArrowRight className="w-4 h-4 ml-2"/>
+                  {t("hero.cta_send")} <ArrowRight className="w-4 h-4 ml-2"/>
                 </Button>
               </Link>
             </div>
@@ -113,14 +114,14 @@ export default function Home() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
             <div className="scanline w-12 mb-3" />
-            <h2 className="font-display font-semibold text-forge-text text-3xl sm:text-4xl">Curated Marketplace</h2>
-            <p className="text-forge-muted mt-2 max-w-xl">Hand-picked designs ready to order — every model tested and printed in our lab.</p>
+            <h2 className="font-display font-semibold text-forge-text text-3xl sm:text-4xl">{t("market.title")}</h2>
+            <p className="text-forge-muted mt-2 max-w-xl">{t("market.desc")}</p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-72">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-forge-muted"/>
               <Input
-                placeholder="Search catalog…"
+                placeholder={t("market.search_ph")}
                 value={q}
                 onChange={(e)=>setQ(e.target.value)}
                 onKeyDown={(e)=>{ if(e.key==='Enter') load(); }}

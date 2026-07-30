@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import ChatWidget from "@/components/ChatWidget";
 import Home from "@/pages/Home";
 import SearchPage from "@/pages/SearchPage";
 import ProductDetail from "@/pages/ProductDetail";
@@ -10,6 +11,7 @@ import PrintRequest from "@/pages/PrintRequest";
 import Community from "@/pages/Community";
 import Dashboard from "@/pages/Dashboard";
 import AuthCallback from "@/pages/AuthCallback";
+import "@/i18n";
 
 function AppRouter() {
   const location = useLocation();
@@ -28,6 +30,7 @@ function AppRouter() {
         </Routes>
       </main>
       <Footer />
+      <ChatWidget />
     </>
   );
 }

@@ -695,6 +695,131 @@ async def on_startup():
 async def root():
     return {"service": "PrintForge API", "version": "1.0.0"}
 
+# ------------------------- Chat with auto-translate (GPT-5.2) -------------------------
+SUPPORTED_LANGS = {
+    "en": "English", "es": "Spanish", "fr": "French", "de": "German",
+    "pt": "Portuguese", "it": "Italian", "nl": "Dutch", "ja": "Japanese",
+    "zh-CN": "Simplified Chinese", "ko": "Korean", "ar": "Arabic", "hi": "Hindi",
+}
+SHOP_OWNER_ID = "shop_owner"
+SHOP_OWNER_NAME = "PrintForge Maker"
+
+class ChatSendRequest(BaseModel):
+    text: str
+    language: str = "en"          # sender's UI language / declared language
+    room_id: Optional[str] = None  # for owner-side sending; defaults to caller's user_id
+
+async def _translate_and_detect(text: str, target_langs: list) -> dict:
+    """Returns {'detected': 'en', 'translations': {'es': '...', 'fr': '...'}}.
+    Falls back gracefully if the LLM is unavailable."""
+    if not EMERGENT_KEY or not text.strip():
+        return {"detected": "en", "translations": {}}
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import json as _json
+        target_list = ", ".join(sorted(set(target_langs)))
+        prompt = (
+            "You are a professional translator. Detect the source language of the user's message, "
+            f"then translate it into these BCP-47 language codes: {target_list}. "
+            "Return ONLY valid JSON with this shape:\n"
+            '{"detected_language":"<bcp47>","translations":{"<code>":"<text>"}}'
+            "\nPreserve emoji and formatting. Do not add explanations."
+        )
+        chat = LlmChat(
+            api_key=EMERGENT_KEY,
+            session_id=f"translate-{uuid.uuid4().hex[:8]}",
+            system_message=prompt,
+        ).with_model("openai", "gpt-5.2")
+        # Non-streaming send is fine here; response is short and structured.
+        resp = await chat.send_message(UserMessage(text=text))
+        raw = resp if isinstance(resp, str) else getattr(resp, "content", str(resp))
+        raw = raw.strip()
+        # Strip code fences if present
+        if raw.startswith("```"):
+            raw = raw.strip("`")
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.strip()
+        try:
+            data = _json.loads(raw)
+        except Exception:
+            first = raw.find("{"); last = raw.rfind("}")
+            data = _json.loads(raw[first:last+1]) if first != -1 and last != -1 else {}
+        return {
+            "detected": (data.get("detected_language") or "en").lower(),
+            "translations": {k: v for k, v in (data.get("translations") or {}).items() if isinstance(v, str)},
+        }
+    except Exception as e:
+        logger.warning(f"Translation failed: {e}")
+        return {"detected": "en", "translations": {}}
+
+def _is_owner(user: Optional[dict]) -> bool:
+    if not user:
+        return False
+    admin_emails = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()}
+    return user.get("email", "").lower() in admin_emails
+
+@api_router.get("/chat/languages")
+async def chat_languages():
+    return {"languages": [{"code": c, "name": n} for c, n in SUPPORTED_LANGS.items()]}
+
+@api_router.post("/chat/messages")
+async def chat_send(payload: ChatSendRequest, user=Depends(get_current_user)):
+    if not payload.text.strip():
+        raise HTTPException(400, "Empty message")
+    is_owner = _is_owner(user)
+    room_id = payload.room_id if is_owner and payload.room_id else user["user_id"]
+    # Translate to all supported languages so any viewer can render instantly
+    tr = await _translate_and_detect(payload.text.strip(), list(SUPPORTED_LANGS.keys()))
+    msg_id = f"msg_{uuid.uuid4().hex[:12]}"
+    doc = {
+        "message_id": msg_id,
+        "room_id": room_id,
+        "sender_id": SHOP_OWNER_ID if is_owner else user["user_id"],
+        "sender_name": SHOP_OWNER_NAME if is_owner else (user.get("name") or user.get("email")),
+        "sender_picture": None if is_owner else user.get("picture"),
+        "sender_role": "owner" if is_owner else "customer",
+        "original_text": payload.text.strip(),
+        "original_language": tr["detected"] or payload.language,
+        "translations": tr["translations"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.chat_messages.insert_one(doc)
+    # Upsert room summary
+    await db.chat_rooms.update_one(
+        {"room_id": room_id},
+        {"$set": {
+            "room_id": room_id,
+            "customer_id": room_id,
+            "customer_name": user.get("name") or user.get("email") if not is_owner else (await db.chat_rooms.find_one({"room_id": room_id}, {"_id":0}) or {}).get("customer_name", "Customer"),
+            "last_message_at": doc["created_at"],
+            "last_preview": doc["original_text"][:140],
+        }, "$inc": {"message_count": 1}},
+        upsert=True,
+    )
+    doc.pop("_id", None)
+    return doc
+
+@api_router.get("/chat/messages")
+async def chat_history(
+    room_id: Optional[str] = Query(None),
+    since: Optional[str] = Query(None, description="ISO datetime; only messages after this"),
+    user=Depends(get_current_user),
+):
+    target = room_id if (_is_owner(user) and room_id) else user["user_id"]
+    q = {"room_id": target}
+    if since:
+        q["created_at"] = {"$gt": since}
+    msgs = await db.chat_messages.find(q, {"_id": 0}).sort("created_at", 1).to_list(500)
+    return {"room_id": target, "messages": msgs, "is_owner": _is_owner(user)}
+
+@api_router.get("/chat/rooms")
+async def chat_rooms(user=Depends(get_current_user)):
+    if not _is_owner(user):
+        raise HTTPException(403, "Owner access only")
+    rooms = await db.chat_rooms.find({}, {"_id": 0}).sort("last_message_at", -1).to_list(200)
+    return rooms
+
 app.include_router(api_router)
 
 app.add_middleware(
