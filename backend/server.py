@@ -1935,7 +1935,7 @@ async def star_design(design_id: str, user=Depends(get_current_user)):
     design = await db.designs.find_one({"design_id": design_id})
     if not design:
         raise HTTPException(404, "Design not found")
-    await db.design_stars.update_one(
+    res = await db.design_stars.update_one(
         {"user_id": user["user_id"], "design_id": design_id},
         {"$setOnInsert": {
             "id": str(uuid.uuid4()),
@@ -1945,6 +1945,33 @@ async def star_design(design_id: str, user=Depends(get_current_user)):
         }},
         upsert=True,
     )
+    if res.upserted_id:
+        # First star from this user — notify the author (skip if starring your own design)
+        author_email = (design.get("author_email") or "").strip()
+        star_count = await db.design_stars.count_documents({"design_id": design_id})
+        if author_email and author_email != (user.get("email") or "").lower():
+            title = design.get("title") or "your design"
+            starrer = user.get("name") or (user.get("email") or "").split("@")[0] or "Someone"
+            html = (
+                f"<div style='font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;background:#0A0A0C;color:#F3E9DB;border-radius:16px'>"
+                f"<div style='font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#F97316'>PrintForge · New star</div>"
+                f"<h1 style='font-family:Playfair Display,Georgia,serif;font-size:24px;margin:6px 0 8px'>Someone loved <span style='color:#F97316'>{title}</span>.</h1>"
+                f"<p style='color:#B7A99A'><b style='color:#F3E9DB'>{starrer}</b> just starred it. That's <b style='color:#F97316'>{star_count} star{'' if star_count == 1 else 's'}</b> total.</p>"
+                f"<p style='color:#B7A99A;font-size:13px'>Design ID <b>{design_id}</b> · community wishlists let makers save your work to print later.</p>"
+                f"<hr style='border:none;border-top:1px solid #1F1F24;margin:20px 0'/>"
+                f"<p style='color:#7A7A7F;font-size:11px'>PrintForge · https://design-forge-520.preview.emergentagent.com</p>"
+                f"</div>"
+            )
+            outcome = _send_email(author_email, f"⭐ Your design was starred · {title}", html)
+            await db.receipts.insert_one({
+                "id": str(uuid.uuid4()),
+                "purpose": "design_star_notification",
+                "design_id": design_id,
+                "email": author_email,
+                "outcome": outcome,
+                "star_count": star_count,
+                "sent_at": datetime.now(timezone.utc).isoformat(),
+            })
     return {"starred": True, "design_id": design_id}
 
 

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ExternalLink, TrendingUp, Heart, Globe, Layers, X } from "lucide-react";
+import { Search, ExternalLink, TrendingUp, Heart, Globe, Layers, X, Wand2 } from "lucide-react";
+import { MAKERLAB_TOOLS, toolHref } from "@/lib/makerlabTools";
 
 const TYPE_STYLES = {
   free:    { label: "FREE",     cls: "chip-tech" },
@@ -20,6 +21,35 @@ export default function SearchPage() {
   const [sources, setSources] = useState([]);
   const [selectedSources, setSelectedSources] = useState(new Set());
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [products, setProducts] = useState([]);
+  const [designs, setDesigns] = useState([]);
+
+  const toolMatches = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (!query || !searched) return [];
+    return MAKERLAB_TOOLS.filter(t => {
+      const hay = `${t.name} ${t.desc} ${(t.tags || []).join(" ")}`.toLowerCase();
+      return hay.includes(query);
+    }).slice(0, 6);
+  }, [q, searched]);
+
+  const productMatches = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (!query || !searched) return [];
+    return products.filter(p => {
+      const hay = `${p.title} ${p.description || ""} ${(p.tags || []).join(" ")}`.toLowerCase();
+      return hay.includes(query);
+    }).slice(0, 6);
+  }, [q, searched, products]);
+
+  const designMatches = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (!query || !searched) return [];
+    return designs.filter(d => {
+      const hay = `${d.title} ${d.description || ""} ${(d.tags || []).join(" ")} ${d.author_name || ""}`.toLowerCase();
+      return hay.includes(query);
+    }).slice(0, 6);
+  }, [q, searched, designs]);
 
   useEffect(() => {
     (async () => {
@@ -36,9 +66,15 @@ export default function SearchPage() {
     try {
       const params = { q, limit: 36 };
       if (selectedSources.size > 0) params.sources = [...selectedSources].join(",");
-      const { data } = await api.get("/search/external", { params });
-      setResults(data.results);
-      setMeta({ total_sites: data.total_sites, sites_searched: data.sites_searched });
+      const [ext, prodRes, dsnRes] = await Promise.all([
+        api.get("/search/external", { params }),
+        api.get("/products").catch(() => ({ data: [] })),
+        api.get("/designs").catch(() => ({ data: [] })),
+      ]);
+      setResults(ext.data.results);
+      setMeta({ total_sites: ext.data.total_sites, sites_searched: ext.data.sites_searched });
+      setProducts(prodRes.data || []);
+      setDesigns(dsnRes.data || []);
       setSearched(true);
     } finally { setLoading(false); }
   };
@@ -133,6 +169,90 @@ export default function SearchPage() {
         {loading && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_,i)=><div key={i} className="card-forge h-64 animate-pulse"/>) }
+          </div>
+        )}
+        {!loading && searched && (toolMatches.length > 0 || productMatches.length > 0 || designMatches.length > 0) && (
+          <div className="space-y-6 mb-10" data-testid="inline-matches">
+            {toolMatches.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Wand2 className="w-4 h-4 text-forge-primary"/>
+                  <h3 className="font-display text-forge-text text-lg">MakerLab tools</h3>
+                  <span className="chip chip-tech text-[9px]">AI</span>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="tool-matches">
+                  {toolMatches.map((t) => (
+                    <a
+                      key={t.id}
+                      href={toolHref(t.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid={`tool-match-${t.id}`}
+                      className="card-forge p-3 flex items-center gap-3 hover:border-forge-primary/60 transition"
+                    >
+                      <div className="w-9 h-9 shrink-0 rounded-lg border border-forge-primary/40 bg-forge-primary/15 flex items-center justify-center">
+                        <Wand2 className="w-4 h-4 text-forge-primary"/>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display text-forge-text text-sm truncate">{t.name}</div>
+                        <div className="text-[11px] text-forge-muted truncate">{t.desc}</div>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-forge-muted"/>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            {productMatches.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Layers className="w-4 h-4 text-forge-primary"/>
+                  <h3 className="font-display text-forge-text text-lg">In our marketplace</h3>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="product-matches">
+                  {productMatches.map((p) => (
+                    <a
+                      key={p.product_id}
+                      href={`/product/${p.product_id}`}
+                      data-testid={`product-match-${p.product_id}`}
+                      className="card-forge p-3 flex items-center gap-3 hover:border-forge-primary/60 transition"
+                    >
+                      {p.image_url && <img src={p.image_url} alt={p.title} className="w-12 h-12 rounded object-cover shrink-0"/>}
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display text-forge-text text-sm truncate">{p.title}</div>
+                        <div className="text-[11px] font-mono text-forge-muted">${(p.price || 0).toFixed(2)} · {p.material}</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            {designMatches.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Heart className="w-4 h-4 text-forge-primary"/>
+                  <h3 className="font-display text-forge-text text-lg">Community designs</h3>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="design-matches">
+                  {designMatches.map((d) => (
+                    <a
+                      key={d.design_id}
+                      href={`/community#${d.design_id}`}
+                      data-testid={`design-match-${d.design_id}`}
+                      className="card-forge p-3 flex items-center gap-3 hover:border-forge-primary/60 transition"
+                    >
+                      <div className="w-12 h-12 shrink-0 rounded bg-forge-elevated flex items-center justify-center">
+                        <Heart className="w-4 h-4 text-forge-tech"/>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display text-forge-text text-sm truncate">{d.title}</div>
+                        <div className="text-[11px] font-mono text-forge-muted truncate">by {d.author_name}</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {!loading && searched && results.length > 0 && (
